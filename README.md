@@ -7,10 +7,13 @@ After cloning the repository, open it in VSCode and run the command Dev Containe
 This will open a container with all the necessary dependencies installed, including an editable version of PorePy.
 
 ## PorePy version
-Use scripts/checkout_porepy.py to checkout the commit (f3f14e14a06f5e8245a378502d8c02edebe537a7) used for the development of this repository.
+Use `sh scripts/checkout_porepy.sh` to checkout the commit (f3f14e14a06f5e8245a378502d8c02edebe537a7) used for the development of this repository.
+
+## Installation of FTHM framework
+Run `sh scripts/install_fthm.sh` to fetch the latest version of the FTHM iterative solver framework for PorePy and install it with its dependencies (besides PETSc).
 
 ## Installation of PETSc
-Use scripts/install_fthm.sh to install PETSc and the iterative solver framework used in this repository.
+Run `sh scripts/install_petsc.sh` to install PETSc and the iterative solver framework used in this repository.
 
 ## To run the code
 To run a simple 3d setup call `python run_simple_bedretto.py`.
