@@ -54,7 +54,9 @@ class IterationExporting:
                 (
                     sd,
                     "scaled_traction",
-                    self.scaled_contact_traction([sd]).value(self.equation_system),
+                    self.characteristic_contact_traction([sd]).value(
+                        self.equation_system
+                    ) * self.contact_traction([sd]).value(self.equation_system),
                 )
             )
             displacement_jump = self.displacement_jump([sd])
@@ -153,19 +155,13 @@ class IterationExporting:
             nd_vec_to_normal = self.normal_component([sd])
             nd_vec_to_tangential = self.tangential_component([sd])
 
-            data.append(
-                (
-                    sd,
-                    "scaled_traction",
-                    self.scaled_contact_traction([sd]).value(self.equation_system),
-                )
-            )
             # Contact mechanics
-            t_n: pp.ad.Operator = nd_vec_to_normal @ self.scaled_contact_traction([sd])
-            u_n: pp.ad.Operator = nd_vec_to_normal @ self.displacement_jump([sd])
-            t_t: pp.ad.Operator = nd_vec_to_tangential @ self.scaled_contact_traction(
+            t_scaled: pp.ad.Operator = self.characteristic_contact_traction([sd]) * self.contact_traction(
                 [sd]
             )
+            t_n: pp.ad.Operator = nd_vec_to_normal @ t_scaled
+            u_n: pp.ad.Operator = nd_vec_to_normal @ self.displacement_jump([sd])
+            t_t: pp.ad.Operator = nd_vec_to_tangential @ t_scaled
             u_t: pp.ad.Operator = nd_vec_to_tangential @ self.displacement_jump([sd])
             u_t_increment: pp.ad.Operator = pp.ad.time_increment(u_t)
 
@@ -193,6 +189,13 @@ class IterationExporting:
             data.append(
                 (
                     sd,
+                    "scaled_traction",
+                    t_scaled.value(self.equation_system),
+                )
+            )
+            data.append(
+                (
+                    sd,
                     "t_n",
                     t_n.value(self.equation_system),
                 )
@@ -207,9 +210,9 @@ class IterationExporting:
             try:
                 yield_criterion = self.yield_criterion([sd])
                 orthogonality = self.orthogonality([sd])
-                c_n = self.contact_mechanics_numerical_constant(subdomains)
+                c_n = self.contact_mechanics_numerical_constant([sd])
                 force = pp.ad.Scalar(-1.0) * t_n
-                gap = c_n * (u_n - self.fracture_gap(subdomains))
+                gap = c_n * (u_n - self.fracture_gap([sd]))
                 f_max = pp.ad.Function(pp.ad.maximum, "max_function")
                 f_norm = pp.ad.Function(
                     partial(pp.ad.l2_norm, self.nd - 1), "norm_function"

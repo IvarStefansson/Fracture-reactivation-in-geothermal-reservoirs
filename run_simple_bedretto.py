@@ -9,15 +9,12 @@ import numpy as np
 import porepy as pp
 from simple_bedretto.geometry import BedrettoGeometry
 from common.numerics import (
-    AdaptiveCnum,
     DarcysLawAd,
     ReverseElasticModuli,
 )
 from simple_bedretto.physics import (
-    ExtendedNumericalConstants,
     Physics,
     fluid_parameters,
-    injection_schedule,
     numerics_parameters,
     solid_parameters,
 )
@@ -63,7 +60,6 @@ class ScaledLinearRadialReturnModel(
 
 # NCP Formulations
 class ScaledNCPModel(
-    AdaptiveCnum,
     ScaledContact,
     NCPNormalContact,
     NCPTangentialContact,
@@ -107,8 +103,9 @@ if __name__ == "__main__":
         "material_constants": {
             "solid": pp.SolidConstants(**solid_parameters),
             "fluid": pp.FluidComponent(**fluid_parameters),
-            # "numerical": pp.NumericalConstants(**numerics_parameters), # NOTE: Use tailored open state tol
+            "numerical": pp.NumericalConstants(**numerics_parameters),
         },
+        # User-defined units
         "units": pp.Units(kg=1e10, m=1, s=1, rad=1),
         # Numerics
         "solver_statistics_file_name": "solver_statistics.json",
@@ -120,32 +117,6 @@ if __name__ == "__main__":
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
     Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
-
-    # Physics-based tuning/scaling of numerical parameters
-    # Use open state tolerance model parameters according to user input
-    characteristic_contact_traction = (
-        injection_schedule["reference_pressure"]
-        if mode in ["rr-nonlinear", "rr-linear", "ncp-min-scaled"]
-        else 1.0
-    )
-    tol = 1e-10
-    open_state_tolerance = (
-        tol
-        if mode in ["rr-nonlinear", "rr-linear", "ncp-min-scaled"]
-        else tol * injection_schedule["reference_pressure"]
-    )
-    numerics_parameters.update(
-        {
-            "open_state_tolerance": open_state_tolerance,
-            "contact_mechanics_scaling": 1.0,
-            "contact_mechanics_scaling_t": 1.0,
-            "characteristic_contact_traction": characteristic_contact_traction,
-        }
-    )
-
-    model_params["material_constants"]["numerical"] = ExtendedNumericalConstants(
-        **numerics_parameters
-    )
 
     # Solver parameters
     solver_params = {

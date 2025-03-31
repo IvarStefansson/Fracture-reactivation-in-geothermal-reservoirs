@@ -52,10 +52,9 @@ class UnscaledContact:
         # constant is therefore proportional to the shear modulus and the inverse of a
         # characteristic length of the fracture, where the latter has the interpretation
         # of a gradient length.
-        cnum = self.cnum(subdomains)
         youngs_modulus = self.youngs_modulus(subdomains)
         size = pp.ad.Scalar(np.max(self.domain.side_lengths()))
-        val = cnum * youngs_modulus / size
+        val = youngs_modulus / size
         val.set_name("Contact_mechanics_numerical_constant")
         return val
 
@@ -94,12 +93,10 @@ class ScaledContact:
         # constant is therefore proportional to the shear modulus and the inverse of a
         # characteristic length of the fracture, where the latter has the interpretation
         # of a gradient length.
-        cnum = self.cnum(subdomains)
         youngs_modulus = self.youngs_modulus(subdomains)
         size = pp.ad.Scalar(np.max(self.domain.side_lengths()))
         val = (
-            cnum
-            * youngs_modulus
+            youngs_modulus
             / size
             / self.characteristic_contact_traction(subdomains)
         )
@@ -154,18 +151,13 @@ class NCPTangentialContact:
         """
 
         characteristic_distance = self.characteristic_jump(subdomains)
-        val = self.cnum_t(subdomains) / characteristic_distance
+        val = pp.ad.Scalar(1.) / characteristic_distance
         return val
 
     def tangential_fracture_deformation_equation(
         self, subdomains: list[pp.Grid]
     ) -> pp.ad.Operator:
         """Alternative (NCP) implementation for tangential contact."""
-
-        # Fracture intersection cells
-        fracture_intersection_cells = pp.ad.TimeDependentDenseArray(
-            "fracture_intersection_cells", subdomains
-        )
 
         # Basis vector combinations
         num_cells = sum([sd.num_cells for sd in subdomains])

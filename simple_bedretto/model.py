@@ -7,9 +7,8 @@ from pathlib import Path
 
 import numpy as np
 import porepy as pp
-from icecream import ic
 from setups.geometry import BedrettoGeometry
-from setups.numerics import AdaptiveCnum, DarcysLawAd, MinFbSwitch, ReverseElasticModuli
+from setups.numerics import DarcysLawAd, ReverseElasticModuli
 from setups.physics import (
     ExtendedNumericalConstants,
     Physics,
@@ -48,7 +47,6 @@ class ScaledLinearRadialReturnModel(
 
 
 # class UnscaledRadialReturnModel(
-#     AdaptiveCnum,
 #     UnscaledContact,
 #     ScaledRadialReturnModel,
 # ): ...
@@ -56,8 +54,6 @@ class ScaledLinearRadialReturnModel(
 
 # NCP Formulations
 class ScaledNCPModel(
-    AdaptiveCnum,
-    # MinFbSwitch,
     ncp.ScaledContact,
     ncp.NCPNormalContact,
     ncp.NCPTangentialContact2d,
@@ -69,8 +65,8 @@ class ScaledNCPModel(
 class NCPModel(ncp.UnscaledContact, ScaledNCPModel): ...
 
 
-def generate_case_name(ad_mode, mode, cnum, tol, unitary_units):
-    return f"{ad_mode}_{mode}_cnum_{cnum}_tol_{tol}_unitary_units_{unitary_units}"
+def generate_case_name(ad_mode, mode, tol, unitary_units):
+    return f"{ad_mode}_{mode}_tol_{tol}_unitary_units_{unitary_units}"
 
 
 if __name__ == "__main__":
@@ -91,7 +87,6 @@ if __name__ == "__main__":
         "--linear-solver", type=str, default="scipy_sparse", help="Linear solver."
     )
     parser.add_argument("--tol", type=float, default=1e-10, help="Tolerance.")
-    parser.add_argument("--cnum", type=float, default=1e0, help="Cnum")
     parser.add_argument("--regularization", type=str, default="none")
     parser.add_argument("--unitary_units", type=str, default="True", help="Units.")
     parser.add_argument("--mesh_size", type=float, default=10, help="Mesh size.")
@@ -105,7 +100,6 @@ if __name__ == "__main__":
     ad_mode = args.ad_mode
     mode = args.mode
     linear_solver = args.linear_solver
-    cnum = args.cnum
     tol = args.tol
     mesh_size = args.mesh_size
     if np.isclose(mesh_size, int(mesh_size)):
@@ -143,7 +137,7 @@ if __name__ == "__main__":
         "max_iterations": num_iter,  # Needed for export
         "folder_name": Path(args.output)
         / f"mesh_size_{mesh_size}"
-        / generate_case_name(ad_mode, mode, cnum, tol, unitary_units),
+        / generate_case_name(ad_mode, mode, tol, unitary_units),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
     Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
@@ -163,8 +157,6 @@ if __name__ == "__main__":
     numerics_parameters.update(
         {
             "open_state_tolerance": open_state_tolerance,
-            "contact_mechanics_scaling": cnum,
-            "contact_mechanics_scaling_t": cnum,
             "characteristic_contact_traction": characteristic_contact_traction,
         }
     )
@@ -208,8 +200,8 @@ if __name__ == "__main__":
             raise ValueError(f"AD mode {ad_mode} not recognized.")
 
     # Model setup
-    logger.info(f"\n\nRunning {model_params['folder_name']}")
-    ic(model_params["folder_name"])
+    logger.info(f"\n\nRunning {model_params['folder_name']}\n\n")
+    
     if mode == "rr-nonlinear":
         model = ScaledRadialReturnModel(model_params)
 

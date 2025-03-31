@@ -44,63 +44,10 @@ background_stress_deg = 100 * (np.pi / 180)  # N100 degrees East
 
 # TODO!
 numerics_parameters: dict[str, float] = {
-    # "open_state_tolerance": 1e-10,  # Numerical method parameter
-    "characteristic_displacement": 1.0,
-    "characteristic_contact_traction": 1.0,
+    "open_state_tolerance": 1e-10,  # Numerical method parameter
+    "characteristic_contact_traction": injection_schedule["reference_pressure"],
 }
 
-
-@dataclass(kw_only=True, eq=False)
-class ExtendedNumericalConstants(pp.NumericalConstants):
-    contact_mechanics_scaling_t: float
-
-    SI_units: ClassVar[dict[str, str]] = dict(
-        {
-            "characteristic_displacement": "m",
-            "characteristic_contact_traction": "Pa",
-            "open_state_tolerance": "-",
-            "contact_mechanics_scaling": "-",
-            "contact_mechanics_scaling_t": "-",
-        }
-    )
-
-    @property
-    def default_constants(self):
-        default_constants = super().default_constants
-        default_constants.update({"contact_mechanics_scaling_t": 1.0})
-        return default_constants
-
-    def contact_mechanics_scaling_t(self):
-        return self.constants["contact_mechanics_scaling_t"]
-
-
-class ADTime:
-    def time(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
-        """AD variant of time .
-
-        Parameters:
-            subdomains: List of subdomains.
-
-        Returns:
-            Operator for time.
-
-        """
-        return pp.ad.TimeDependentDenseArray("time", [self.mdg.subdomains()[0]])
-
-    def update_time_ones(self) -> None:
-        for sd in self.mdg.subdomains(return_data=False):
-            pp.set_solution_values(
-                name="time",
-                values=self.units.convert_units(
-                    np.array([self.time_manager.time]), "s"
-                ),
-                data=self.mdg.subdomain_data(sd),
-                iterate_index=0,
-            )
-
-    def update_time_dependent_ad_arrays(self) -> None:
-        super().update_time_dependent_ad_arrays()
-        self.update_time_ones()
 
 
 class RampedGravity:
@@ -254,7 +201,10 @@ class LithostaticPressureBC:
 
         # Lithostatic stress on the domain boundaries.
         if boundary_grid.dim == self.nd - 1 and self.onset:
-            normals = boundary_grid.cell_normals
+            #normals = boundary_grid.cell_normals - not supported at the moment
+            normals = np.transpose(
+                boundary_grid.projection() @ np.transpose(boundary_grid.parent.face_normals)
+            )
             background_stress_tensor = self.background_stress(boundary_grid)
             surface_stress = np.einsum("ijk,jk->ik", background_stress_tensor, normals)
             neumann_faces = self._stress_boundary_faces(boundary_grid)
@@ -333,7 +283,7 @@ class GlobalHydrostaticPressure:
 
             pp.set_solution_values(
                 name="pressure_constraint_indicator",
-                values=np.array([self.time_manager.time < 2 * pp.DAY + 1e-5]),
+                values=(self.time_manager.time < 2 * pp.DAY + 1e-5) * np.ones(sd.num_cells, dtype=float),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
             )
@@ -346,7 +296,7 @@ class GlobalHydrostaticPressure:
         constrained_eq.set_name("mass_balance_equation_with_constrained_pressure")
 
         indicator = pp.ad.TimeDependentDenseArray(
-            "pressure_constraint_indicator", [self.mdg.subdomains()[0]]
+            "pressure_constraint_indicator", subdomains
         )
 
         eq = super().mass_balance_equation(subdomains)
@@ -428,7 +378,6 @@ class GlobalHydrostaticPressure:
 
 
 class Physics(
-    ADTime,
     BackgroundStress,
     HydrostaticPressureBC,
     LithostaticPressureBC,
