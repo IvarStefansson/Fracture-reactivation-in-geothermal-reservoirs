@@ -30,22 +30,20 @@ solid_parameters: dict[str, float] = {
     "friction_coefficient": 0.8,
 }
 
-# TODO!
 injection_schedule = {
-    "time": [pp.DAY * 0.2, pp.DAY * 0.4, pp.DAY * 0.6, pp.DAY * 0.8, pp.DAY],
-    "pressure": [0e6] * 5,
+    "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
+    "pressure": [0,0] + [3e7, 5e7, 10e7, 5e7, 5e7],
     "reference_pressure": 1e7,
 }
 
-# TODO!
-principal_background_stress_max_factor = 0.0  # 1.3  # 24e6  # 24 MPa
-principal_background_stress_min_factor = 0.0  # 0.8  # 14e6  # 14 MPa
+principal_background_stress_max_factor = 1.3  # 1.3  # 24e6  # 24 MPa
+principal_background_stress_min_factor = 0.8  # 0.8  # 14e6  # 14 MPa
 background_stress_deg = 100 * (np.pi / 180)  # N100 degrees East
 
-# TODO!
 numerics_parameters: dict[str, float] = {
     "open_state_tolerance": 1e-10,  # Numerical method parameter
     "characteristic_contact_traction": injection_schedule["reference_pressure"],
+    "contact_mechanics_scaling": 1.0,
 }
 
 
@@ -123,7 +121,7 @@ class BackgroundStress:
         rho_g = bulk_density * gravity
         z = grid.cell_centers[-1]
         s_v = -rho_g * z
-        return s_v
+        return -s_v
 
     def horizontal_background_stress(self, grid: pp.Grid) -> np.ndarray:
         """Horizontal background stress."""
@@ -177,22 +175,44 @@ class LithostaticPressureBC:
 
     onset: bool
 
-    def _displacement_boundary_faces(self, sd: pp.Grid) -> np.ndarray:
-        return self.domain_boundary_sides(sd).bottom
-
-    def _stress_boundary_faces(self, sd: pp.Grid) -> np.ndarray:
-        all_faces = self.domain_boundary_sides(sd).all_bf
-        return np.logical_and(
-            all_faces, np.logical_not(self._displacement_boundary_faces(sd))
-        )
-
     def bc_type_mechanics(self, sd: pp.Grid) -> pp.BoundaryConditionVectorial:
+        boundary_faces =self.domain_boundary_sides(sd).all_bf
         bc = pp.BoundaryConditionVectorial(
-            sd, self._displacement_boundary_faces(sd), "dir"
+            sd, boundary_faces, "dir"
         )
-        # Default internal BC is Neumann. We change to Dirichlet, i.e., the
-        # mortar variable represents the displacement on the fracture faces.
         bc.internal_to_dirichlet(sd)
+
+        domain_sides = self.domain_boundary_sides(sd)
+
+        # For later
+        if sd.dim == 3:
+            if True:
+                # Fix entire bottom
+                bc.is_dir[:, domain_sides.bottom] = True
+                bc.is_neu[:, domain_sides.bottom] = False
+            else:
+                # Only fix one cell and restrict z-direction on bottom
+                bc.is_dir[0, domain_sides.bottom] = False
+                bc.is_dir[1, domain_sides.bottom] = False
+                bc.is_dir[2, domain_sides.bottom] = True
+                bc.is_neu[0, domain_sides.bottom] = True
+                bc.is_neu[1, domain_sides.bottom] = True
+                bc.is_neu[2, domain_sides.bottom] = False
+                # Find the cell closest to the center
+                center_x = np.mean(sd.cell_centers[0, domain_sides.bottom])
+                center_y = np.mean(sd.cell_centers[1, domain_sides.bottom])
+                center_z = np.mean(sd.cell_centers[2, domain_sides.bottom])
+                fixed_cell = sd.closest_cell(
+                    np.array([center_x, center_y, center_z])
+                )
+                #fixed_cell = np.argmax(domain_sides.bottom)
+                bc.is_dir[:, fixed_cell] = True
+                bc.is_neu[:, fixed_cell] = False
+
+            for side in [domain_sides.north, domain_sides.south, domain_sides.east, domain_sides.west, domain_sides.top]:
+                bc.is_dir[:, side] = False
+                bc.is_neu[:, side] = True
+
         return bc
 
     def bc_values_stress(self, boundary_grid: pp.BoundaryGrid) -> np.ndarray:
@@ -201,14 +221,18 @@ class LithostaticPressureBC:
 
         # Lithostatic stress on the domain boundaries.
         if boundary_grid.dim == self.nd - 1 and self.onset:
-            #normals = boundary_grid.cell_normals - not supported at the moment
-            normals = np.transpose(
-                boundary_grid.projection() @ np.transpose(boundary_grid.parent.face_normals)
-            )
             background_stress_tensor = self.background_stress(boundary_grid)
-            surface_stress = np.einsum("ijk,jk->ik", background_stress_tensor, normals)
-            neumann_faces = self._stress_boundary_faces(boundary_grid)
-            vals[:, neumann_faces] = surface_stress[:, neumann_faces]
+            domain_sides = self.domain_boundary_sides(boundary_grid)
+
+            # Stress times normal
+            for dir, orientation, side in zip(
+                [0, 0, 1, 1, 2],
+                [-1,1,-1,1,1],
+                [domain_sides.north, domain_sides.south, domain_sides.east, domain_sides.west, domain_sides.top],
+            ):
+                for i in range(self.nd):
+                    vals[i, side] = orientation * background_stress_tensor[i,dir, side] * boundary_grid.cell_volumes[domain_sides.top]
+            
 
         return vals.ravel("F")
 
@@ -266,7 +290,9 @@ class NonzeroInitialCondition:
         return traction_vals.ravel("F")
 
 
-class GlobalHydrostaticPressure:
+class HydrostaticPressureInitialization:
+    # Initializes the fluid with hydrostatic pressure in the first time step.
+
     def update_time_dependent_ad_arrays(self) -> None:
         """Set hydrostatic pressure for current gravity."""
         super().update_time_dependent_ad_arrays()
@@ -283,7 +309,7 @@ class GlobalHydrostaticPressure:
 
             pp.set_solution_values(
                 name="pressure_constraint_indicator",
-                values=(self.time_manager.time < 2 * pp.DAY + 1e-5) * np.ones(sd.num_cells, dtype=float),
+                values=(self.time_manager.time < 1 * pp.DAY + 1e-5) * np.ones(sd.num_cells, dtype=float),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
             )
@@ -305,84 +331,84 @@ class GlobalHydrostaticPressure:
         return combined_eq
 
 
-# class PressureConstraintWell:
-#     def update_time_dependent_ad_arrays(self) -> None:
-#         """Set current injection pressure."""
-#         super().update_time_dependent_ad_arrays()
-#
-#         # Update injection pressure
-#         current_injection_pressure = np.interp(
-#             self.time_manager.time,
-#             injection_schedule["time"],
-#             injection_schedule["pressure"],
-#             left=0.0,
-#         )
-#         for sd in self.mdg.subdomains(return_data=False):
-#             pp.set_solution_values(
-#                 name="current_injection_pressure",
-#                 values=np.array([current_injection_pressure]),
-#                 data=self.mdg.subdomain_data(sd),
-#                 iterate_index=0,
-#             )
-#
-#     def mass_balance_equation(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
-#         std_eq = super().mass_balance_equation(subdomains)
-#
-#         # Need to embedd in full domain
-#         sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
-#
-#         # Pick the only subdomain
-#         fracture_sds = [sd for sd in subdomains if sd.dim == self.nd - 1]
-#
-#         if len(fracture_sds) == 0:
-#             return std_eq
-#
-#         # Pick a single fracture
-#         well_sd = fracture_sds[0]
-#
-#         for i, sd in enumerate(subdomains):
-#             if sd == well_sd:
-#                 # Pick the center (hardcoded)
-#                 well_loc = np.array(
-#                     [
-#                         self.units.convert_units(1500, "m"),
-#                         self.units.convert_units(1500, "m"),
-#                         0,
-#                     ]
-#                 ).reshape((3, 1))
-#
-#                 well_loc_ind = sd.closest_cell(well_loc)
-#
-#                 sd_indicator[i][well_loc_ind] = 1
-#
-#         # Characteristic functions
-#         indicator = np.concatenate(sd_indicator)
-#         reverse_indicator = 1 - indicator
-#
-#         current_injection_pressure = pp.ad.TimeDependentDenseArray(
-#             "current_injection_pressure", [self.mdg.subdomains()[0]]
-#         )
-#         constrained_eq = self.pressure(subdomains) - current_injection_pressure
-#
-#         # pp.ad.Scalar(self.units.convert_units(injection_pressure, "Pa"))
-#
-#         eq_with_pressure_constraint = (
-#             pp.ad.DenseArray(reverse_indicator) * std_eq
-#             + pp.ad.DenseArray(indicator) * constrained_eq
-#         )
-#         eq_with_pressure_constraint.set_name(
-#             "mass_balance_equation_with_constrained_pressure"
-#         )
-#
-#         return eq_with_pressure_constraint
+class PressureConstraintWell:
+    def update_time_dependent_ad_arrays(self) -> None:
+        """Set current injection pressure."""
+        super().update_time_dependent_ad_arrays()
+
+        # Update injection pressure
+        current_injection_pressure = np.interp(
+            self.time_manager.time,
+            injection_schedule["time"],
+            injection_schedule["pressure"],
+            left=0.0,
+        )
+        for sd in self.mdg.subdomains(return_data=False):
+            pp.set_solution_values(
+                name="current_injection_pressure",
+                values=np.array([self.units.convert_units(current_injection_pressure, "Pa")]),
+                data=self.mdg.subdomain_data(sd),
+                iterate_index=0,
+            )
+
+    def mass_balance_equation(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
+        std_eq = super().mass_balance_equation(subdomains)
+
+        # Need to embedd in full domain
+        sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
+
+        # Pick the only subdomain
+        fracture_sds = [sd for sd in subdomains if sd.dim == self.nd - 1]
+
+        if len(fracture_sds) == 0:
+            return std_eq
+
+        # Pick a single fracture
+        well_sd = fracture_sds[0]
+
+        for i, sd in enumerate(subdomains):
+            if sd == well_sd:
+                # Pick the center (hardcoded)
+                well_loc = np.array(
+                    [
+                        self.units.convert_units(0, "m"),
+                        self.units.convert_units(0, "m"),
+                        self.units.convert_units(-3000, "m"),
+                    ]
+                ).reshape((3, 1))
+
+                well_loc_ind = sd.closest_cell(well_loc)
+
+                sd_indicator[i][well_loc_ind] = 1
+
+        # Characteristic functions
+        indicator = np.concatenate(sd_indicator)
+        reverse_indicator = 1 - indicator
+
+        current_injection_pressure = pp.ad.TimeDependentDenseArray(
+            "current_injection_pressure", [self.mdg.subdomains()[0]]
+        )
+        constrained_eq = self.pressure(subdomains) - current_injection_pressure
+
+        eq_with_pressure_constraint = (
+            pp.ad.DenseArray(reverse_indicator) * std_eq
+            + pp.ad.DenseArray(indicator) * constrained_eq
+        )
+        eq_with_pressure_constraint.set_name(
+            "mass_balance_equation_with_constrained_pressure"
+        )
+
+        return eq_with_pressure_constraint
 
 
 class Physics(
+    # NonzeroInitialCondition,
     BackgroundStress,
     HydrostaticPressureBC,
     LithostaticPressureBC,
-    # NonzeroInitialCondition,
-    GlobalHydrostaticPressure,
-    # PressureConstraintWell,
+    HydrostaticPressureInitialization,
+    PressureConstraintWell,
     pp.constitutive_laws.GravityForce,
+    pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
+    pp.poromechanics.Poromechanics,  # Basic model
 ): ...
