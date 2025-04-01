@@ -471,6 +471,11 @@ class LinearRadialReturnTangentialContact:
         equation.set_name("tangential_fracture_deformation_equation")
         return equation
 
+class NCPContact(
+    ScaledContact,
+    NCPNormalContact,
+    NCPTangentialContact,
+): """Collect all NCP contact models."""
 
 class AuxiliaryContact:
     def yield_criterion(self, subdomains: list[pp.Grid]):
