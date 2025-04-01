@@ -207,14 +207,15 @@ if __name__ == "__main__":
             NonlinearRadialReturnModel,
         ):
             """Add return map before each iteration."""
-        model = NonlinearRadialReturnModel(model_params)
         model_params["linear_solver_config"] = {
-            "solver": "CPR",  # Avaliable options: CPR, SAMG, FGMRES (fastest to slowest).
-            "ksp_monitor": False,  # Enable to see convergence messages from PETSc.
+            # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
+            # For HM, this parameter is ignored.
+            "solver": "CPR",
+            "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
             "logging": False,  # Does not work well with a progress bar.
         }
         solver_params["linear_solver_config"] = model_params["linear_solver_config"]
-
+        model = NonlinearRadialReturnModel(model_params)
 
     else:
         raise ValueError(f"formulation {formulation} not recognized.")

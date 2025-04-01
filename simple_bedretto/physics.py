@@ -4,6 +4,7 @@ from warnings import warn
 
 import numpy as np
 import porepy as pp
+from porepy.models.fluid_mass_balance import FluidMassBalanceEquations
 
 # ! ---- MATERIAL PARAMETERS ----
 
@@ -328,6 +329,8 @@ class HydrostaticPressureInitialization:
         eq = super().mass_balance_equation(subdomains)
 
         combined_eq = indicator * constrained_eq + (pp.ad.Scalar(1.0) - indicator) * eq
+        # YZ: Iterative linear solver relies on this name to find this equation.
+        combined_eq.set_name(FluidMassBalanceEquations.primary_equation_name())
         return combined_eq
 
 
