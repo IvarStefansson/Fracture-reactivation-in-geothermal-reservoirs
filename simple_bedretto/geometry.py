@@ -88,3 +88,7 @@ class BedrettoGeometry(CubeDomainOrthogonalFractures):
             ns_frac(tm=2440),
             tunnel_perp(tm=1925),
         ]
+
+        # Allow to steer number of fractures
+        num_fractures = self.params.get("num_fractures")
+        self._fractures = self._fractures[:num_fractures]
