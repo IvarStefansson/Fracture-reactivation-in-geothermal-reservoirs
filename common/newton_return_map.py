@@ -30,10 +30,16 @@ class NewtonReturnMap:
             # Find the indices of the global traction array corresponding to the normal and
             # tangential components. This is equivalent to the column position of all nonzero elements
             # of the normal and tangential projection matrices, respectively.
-            tang_matrix = self.tangential_component(fracture_domains).value(self.equation_system)
-            norm_matrix = self.normal_component(fracture_domains).value(self.equation_system)
-            tang_indices = np.nonzero(tang_matrix)[1]
-            norm_indices = np.nonzero(norm_matrix)[1]
+
+            # print(self.tangential_component(fracture_domains).value(self.equation_system))
+
+            # assert False
+            # tang_matrix = self.tangential_component(fracture_domains).value(self.equation_system)
+            # norm_matrix = self.normal_component(fracture_domains).value(self.equation_system)
+            # print(np.nonzero(tang_matrix))
+            # print(np.nonzero(norm_matrix))
+            # tang_indices = np.nonzero(tang_matrix)[1]
+            # norm_indices = np.nonzero(norm_matrix)[1]
 
             # If the simulation is three-dimensional, the tangential component
             # is (cell-wise) two-dimensional and is accordingly put into
@@ -49,7 +55,7 @@ class NewtonReturnMap:
             for i in range(len(t_n_new)):
                 if t_n_new[i] > 0:
                     t_n_new[i] = 0  # Set the normal traction to zero.
-            friction_coeff = self.solid.friction_coefficient()
+            friction_coeff = self.friction_coefficient(fracture_domains).value(self.equation_system)
             friction_bound = -1.0 * friction_coeff * t_n_new
             # Return map in tangential direction, using the newly
             # obtained normal tractions.
@@ -61,8 +67,12 @@ class NewtonReturnMap:
 
             # Put normal and tangential tractions in the right positions of the global
             # traction array.
-            t_eval_new[tang_indices] = t_t_new.ravel()
-            t_eval_new[norm_indices] = t_n_new
+            # TODO: Eirik, can you please set up the right projection?
+            # Use git log -p to see some of the removed code.
+            e_0_0 = (self.e_i(fracture_domains, i=0, dim=self.nd) @ self.e_i(fracture_domains, i=0, dim=self.nd-1).T).value(self.equation_system)
+            e_1_1 = (self.e_i(fracture_domains, i=1, dim=self.nd) @ self.e_i(fracture_domains, i=0, dim=self.nd-1).T).value(self.equation_system)
+            e_2_2 = self.e_i(fracture_domains, i=self.nd -1, dim=self.nd).value(self.equation_system)
+            t_eval_new = e_0_0 @ t_t_new + e_1_1 @ t_t_new + e_2_2 @ t_n_new
 
             # Update traction values after having performed the return map.
             self.equation_system.set_variable_values(t_eval_new, ["t"], iterate_index=0)
