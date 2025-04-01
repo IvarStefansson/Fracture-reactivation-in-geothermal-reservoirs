@@ -29,7 +29,6 @@ from common.contact_mechanics import (
     ScaledContact,
     NCPNormalContact,
     NCPTangentialContact,
-    UnscaledContact,
 )
 
 
@@ -39,16 +38,14 @@ logging.basicConfig(level=logging.INFO)
 
 
 class ScaledRadialReturnModel(
-    ReverseElasticModuli,  # Characteristic displacement from traction
     BedrettoGeometry,  # Geometry
-    Physics,  # BC and IC
     AuxiliaryContact,  # Yield function, orthognality, and alignment
-    FractureStates,  # Physics based conact states
+    FractureStates,  # Physics based contact states for output only
     IterationExporting,  # Tailored export
     LebesgueConvergenceMetrics,  # Convergence metrics
     LogPerformanceDataVectorial,  # Tailored convergence checks
-    pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
-    pp.poromechanics.Poromechanics,  # Basic model
+    ReverseElasticModuli,  # Characteristic displacement from traction
+    Physics,  # Basic model, BC and IC
 ):
     """Mixed-dimensional poroelastic problem."""
 
@@ -67,10 +64,6 @@ class ScaledNCPModel(
 ): ...
 
 
-# NCP Formulations
-class NCPModel(UnscaledContact, ScaledNCPModel): ...
-
-
 def generate_case_name(ad_mode, mode):
     return f"{ad_mode}_{mode}"
 
@@ -85,6 +78,9 @@ if __name__ == "__main__":
     parser.add_argument(
         "--mode", type=str, default="rr-nonlinear", help="Formulation to use."
     )
+    parser.add_argument(
+        "--num-fractures", type=int, default=6, help="Number of fractures."
+    )
     args = parser.parse_args()
     ad_mode = args.ad_mode
     mode = args.mode
@@ -93,9 +89,11 @@ if __name__ == "__main__":
     model_params = {
         # Geometry
         "gmsh_file_name": f"msh/gmsh_frac_file.msh",
+        "num_fractures": args.num_fractures,
         # Time
         "time_manager": pp.TimeManager(
-            schedule=[0, 5 * pp.DAY],
+            # TODO allow for negative times in PP for initialization
+            schedule=[0, 2 * pp.DAY] + [(3+i) * pp.DAY for i in range(5)],
             dt_init=pp.DAY,
             constant_dt=True,
         ),
@@ -161,45 +159,41 @@ if __name__ == "__main__":
 
     elif mode == "ncp-min":
         model_params["ncp_type"] = "min"
-        model = NCPModel(model_params)
-
-    elif mode == "ncp-min-scaled":
-        model_params["ncp_type"] = "min"
         model = ScaledNCPModel(model_params)
 
     elif mode == "ncp-fb":
         model_params["ncp_type"] = "fb"
-        model = NCPModel(model_params)
+        model = ScaledNCPModel(model_params)
 
     elif mode == "ncp-fb-full":
         model_params["ncp_type"] = "fb-full"
-        model = NCPModel(model_params)
+        model = ScaledNCPModel(model_params)
 
-    # elif mode == "rr-linesearch":
-    # Need to integrate pp.models.solution_strategy.ContactIndicators in model class
-    #    # porepy-main-1.10
+    elif mode == "rr-nonlinear-linesearch":
+        
+        class ScaledRadialReturnModel(
+            pp.models.solution_strategy.ContactIndicators,
+            ScaledRadialReturnModel,
+        ):
+            """Added contact indicators for line search."""
+        model = ScaledRadialReturnModel(model_params)
 
-    #    model_params["material_constants"]["solid"]._constants[
-    #        "characteristic_displacement"
-    #    ] = 1e-2
-    #    model = ScaledRadialReturnModel(model_params)
+        class ConstraintLineSearchNonlinearSolver(
+            line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
+            line_search.SplineInterpolationLineSearch,  # Technical implementation of the actual search along given update direction
+            line_search.LineSearchNewtonSolver,  # General line search.
+        ): ...
 
-    #    class ConstraintLineSearchNonlinearSolver(
-    #        line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
-    #        line_search.SplineInterpolationLineSearch,  # Technical implementation of the actual search along given update direction
-    #        line_search.LineSearchNewtonSolver,  # General line search.
-    #    ): ...
-
-    #    solver_params["nonlinear_solver"] = ConstraintLineSearchNonlinearSolver
-    #    solver_params["Global_line_search"] = (
-    #        0  # Set to 1 to use turn on a residual-based line search
-    #    )
-    #    solver_params["Local_line_search"] = (
-    #        1  # Set to 0 to use turn off the tailored line search
-    #    )
-    #    solver_params["adaptive_indicator_scaling"] = (
-    #        1  # Scale the indicator adaptively to increase robustness
-    #    )
+        solver_params["nonlinear_solver"] = ConstraintLineSearchNonlinearSolver
+        solver_params["Global_line_search"] = (
+            0  # Set to 1 to use turn on a residual-based line search
+        )
+        solver_params["Local_line_search"] = (
+            1  # Set to 0 to use turn off the tailored line search
+        )
+        solver_params["adaptive_indicator_scaling"] = (
+            1  # Scale the indicator adaptively to increase robustness
+        )
 
     else:
         raise ValueError(f"Mode {mode} not recognized.")
