@@ -31,6 +31,7 @@ from common.contact_mechanics import (
 )
 
 from common.newton_return_map import NewtonReturnMap
+from FTHM_Solver.hm_solver import IterativeHMSolver
 
 
 # Set logging level
@@ -198,6 +199,22 @@ if __name__ == "__main__":
             """Add return map before each iteration."""
 
         model = NonlinearRadialReturnModel(model_params)
+
+    elif formulation == "rr-nonlinear-fthm":
+
+        class NonlinearRadialReturnModel(
+            IterativeHMSolver,
+            NonlinearRadialReturnModel,
+        ):
+            """Add return map before each iteration."""
+        model = NonlinearRadialReturnModel(model_params)
+        model_params["linear_solver_config"] = {
+            "solver": "CPR",  # Avaliable options: CPR, SAMG, FGMRES (fastest to slowest).
+            "ksp_monitor": False,  # Enable to see convergence messages from PETSc.
+            "logging": False,  # Does not work well with a progress bar.
+        }
+        solver_params["linear_solver_config"] = model_params["linear_solver_config"]
+
 
     else:
         raise ValueError(f"formulation {formulation} not recognized.")
