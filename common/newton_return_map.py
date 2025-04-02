@@ -18,6 +18,10 @@ class NewtonReturnMap:
         if self.nonlinear_solver_statistics.num_iteration > 0:
             # Evaluate tractions and the friction bound.
             fracture_domains = self.mdg.subdomains(dim=self.nd - 1)
+
+            normal_basis = self.normal_component(fracture_domains)
+            tangential_basis = self.tangential_component(fracture_domains)
+
             t_t = self.tangential_component(fracture_domains) @ self.contact_traction(fracture_domains)
             t_n = self.normal_component(fracture_domains) @ self.contact_traction(fracture_domains)
             t_t_eval = t_t.value(self.equation_system)
@@ -67,14 +71,32 @@ class NewtonReturnMap:
 
             # Put normal and tangential tractions in the right positions of the global
             # traction array.
-            # TODO: Eirik, can you please set up the right projection?
-            # Use git log -p to see some of the removed code.
-            e_0_0 = (self.e_i(fracture_domains, i=0, dim=self.nd) @ self.e_i(fracture_domains, i=0, dim=self.nd-1).T).value(self.equation_system)
-            e_1_1 = (self.e_i(fracture_domains, i=1, dim=self.nd) @ self.e_i(fracture_domains, i=0, dim=self.nd-1).T).value(self.equation_system)
-            e_2_2 = self.e_i(fracture_domains, i=self.nd -1, dim=self.nd).value(self.equation_system)
-            t_eval_new = e_0_0 @ t_t_new + e_1_1 @ t_t_new + e_2_2 @ t_n_new
+
+            # Projection matrix (represented as an ArraySlicer) from the full traction
+            # to the normal direction.
+            normal_restriction = normal_basis._slicer
+            # Take the transpose to map back to the full traction space.
+            normal_prolongation = normal_restriction.T
+
+            # The tangential projection is essentially a list of Ad projection
+            # operators. These are stored as the children (this was the simplest way to
+            # get the Ad parsing machinery to collaborate).
+            tangential_restriction = tangential_basis.children
+
+            # To get the transporse, we fetch the slicer of each child and take its
+            # transpose. This should leave tangential_prolongation as a list of
+            # ArraySlicers.
+            tangential_prolongation = [e._slicer.T for e in tangential_restriction]
+            
+            # Apply the normal projection operator to the normal traction.
+            t_eval_new = normal_prolongation @ t_n_new
+            # Loop over the tangential projection operators and apply them to the
+            # components of the tangential traction.
+            for ind, e_i in enumerate(tangential_prolongation):
+                # Apply the projection operator to the tangential traction.
+                t_eval_new += e_i @ t_t_new[:, ind]
 
             # Update traction values after having performed the return map.
-            self.equation_system.set_variable_values(t_eval_new, ["t"], iterate_index=0)
+            self.equation_system.set_variable_values(t_eval_new, variables=[self.contact_traction_variable], iterate_index=0)
 
         super().before_nonlinear_iteration()
