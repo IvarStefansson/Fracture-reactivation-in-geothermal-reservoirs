@@ -52,8 +52,6 @@ class MyModel(THMSolver, pp.Thermoporomechanics):
         ]
 
 
-HOUR = 60 * 60
-
 params = {
     "material_constants": {
         "solid": pp.SolidConstants(
@@ -96,7 +94,7 @@ params = {
     },
     "time_manager": pp.TimeManager(
         dt_init=10,
-        schedule=[0, HOUR],
+        schedule=[0, pp.HOUR],
         iter_max=10,
         constant_dt=False,
     ),

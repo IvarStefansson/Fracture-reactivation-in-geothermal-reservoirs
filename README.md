@@ -17,3 +17,4 @@ Run `sh scripts/install_petsc.sh` to install PETSc and the iterative solver fram
 
 ## To run the code
 To run a simple 3d setup call `python run_simple_bedretto.py`.
+The script takes parsed arguments, see the first lines of the script below the if __name__ == "__main__": statement for options and the default values.

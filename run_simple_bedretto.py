@@ -5,7 +5,6 @@ import logging
 import time
 from pathlib import Path
 
-import numpy as np
 import porepy as pp
 from porepy.numerics.nonlinear import line_search
 from simple_bedretto.geometry import BedrettoGeometry
@@ -48,17 +47,21 @@ class NonlinearRadialReturnModel(
     LogPerformanceDataVectorial,  # Tailored convergence checks
     ReverseElasticModuli,  # Characteristic displacement from traction
     Physics,  # Basic model, BC and IC
-): """Simple Bedretto model solved with Huebers nonlinear radial return formulation."""
+):
+    """Simple Bedretto model solved with Huebers nonlinear radial return formulation."""
 
 
 class LinearRadialReturnModel(
     LinearRadialReturnTangentialContact, NonlinearRadialReturnModel
-): """Simple Bedretto model solved with Alart linear radial return formulation."""
+):
+    """Simple Bedretto model solved with Alart linear radial return formulation."""
+
 
 class NCPModel(
     NCPContact,
     NonlinearRadialReturnModel,
-): """Simple Bedretto model solved with NCP formulation."""
+):
+    """Simple Bedretto model solved with NCP formulation."""
 
 
 def generate_case_name(ad_mode, formulation):
@@ -85,12 +88,12 @@ if __name__ == "__main__":
     # Model parameters
     model_params = {
         # Geometry
-        "gmsh_file_name": f"msh/gmsh_frac_file.msh",
+        "gmsh_file_name": "msh/gmsh_frac_file.msh",
         "num_fractures": args.num_fractures,
         # Time
         "time_manager": pp.TimeManager(
             # TODO allow for negative times in PP for initialization
-            schedule=[0, 2 * pp.DAY] + [(3+i) * pp.DAY for i in range(5)],
+            schedule=[0, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
             dt_init=pp.DAY,
             constant_dt=True,
         ),
@@ -133,11 +136,11 @@ if __name__ == "__main__":
 
         case "newton":
 
-            class NonlinearRadialReturnModel(DarcysLawAd, NonlinearRadialReturnModel): ...
-
-            class LinearRadialReturnModel(
-                DarcysLawAd, LinearRadialReturnModel
+            class NonlinearRadialReturnModel(
+                DarcysLawAd, NonlinearRadialReturnModel
             ): ...
+
+            class LinearRadialReturnModel(DarcysLawAd, LinearRadialReturnModel): ...
 
             class NCPModel(DarcysLawAd, NCPModel): ...
 
@@ -165,17 +168,19 @@ if __name__ == "__main__":
         model = NCPModel(model_params)
 
     elif formulation == "rr-nonlinear-linesearch":
-        
+
         class NonlinearRadialReturnModel(
             pp.models.solution_strategy.ContactIndicators,
             NonlinearRadialReturnModel,
         ):
             """Added contact indicators for line search."""
+
         model = NonlinearRadialReturnModel(model_params)
 
         class ConstraintLineSearchNonlinearSolver(
             line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
-            line_search.SplineInterpolationLineSearch,  # Technical implementation of the actual search along given update direction
+            line_search.SplineInterpolationLineSearch,  # Technical implementation of
+            # the actual search along given update direction
             line_search.LineSearchNewtonSolver,  # General line search.
         ): ...
 
@@ -191,7 +196,7 @@ if __name__ == "__main__":
         )
 
     elif formulation == "rr-nonlinear-return-map":
-        
+
         class NonlinearRadialReturnModel(
             NewtonReturnMap,
             NonlinearRadialReturnModel,
@@ -207,6 +212,7 @@ if __name__ == "__main__":
             NonlinearRadialReturnModel,
         ):
             """Add return map before each iteration."""
+
         model_params["linear_solver_config"] = {
             # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
             # For HM, this parameter is ignored.
