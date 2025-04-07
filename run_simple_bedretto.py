@@ -219,6 +219,9 @@ if __name__ == "__main__":
             "solver": "CPR",
             "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
             "logging": False,  # Does not work well with a progress bar.
+            # Apply a linear transformation to avoid problem with the singular contact
+            # mechanics submatrix. Required for the default PP formulation.
+            "treat_singularity_contact": True,
         }
         solver_params["linear_solver_config"] = model_params["linear_solver_config"]
         model = NonlinearRadialReturnModel(model_params)

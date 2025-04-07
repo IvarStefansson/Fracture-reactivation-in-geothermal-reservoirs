@@ -101,9 +101,14 @@ params = {
     "adaptive_indicator_scaling": 1,
     "progressbars": True,
     "linear_solver_config": {
-        "solver": "CPR",  # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest). For HM, this parameter is ignored.
+        # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest). For HM,
+        # this parameter is ignored.
+        "solver": "CPR",
         "ksp_monitor": False,  # Enable to see convergence messages from PETSc.
         "logging": False,  # Does not work well with a progress bar.
+        # Apply a linear transformation to avoid problem with the singular contact
+        # mechanics submatrix. Required for the default PP formulation.
+        "treat_singularity_contact": True,
     },
 }
 model = MyModel(params)
