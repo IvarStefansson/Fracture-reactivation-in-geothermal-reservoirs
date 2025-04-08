@@ -64,8 +64,12 @@ class NCPModel(
     """Simple Bedretto model solved with NCP formulation."""
 
 
-def generate_case_name(ad_mode, formulation):
-    return f"{ad_mode}_{formulation}"
+def generate_case_name(formulation, linearization, relaxation, linear_solver):
+    name = f"{formulation.lower()}_{linearization.lower()}"
+    if relaxation.lower() != "none":
+        name += f"_{relaxation.lower()}"
+    name += f"_{linear_solver.lower()}"
+    return name
 
 
 if __name__ == "__main__":
@@ -74,16 +78,38 @@ if __name__ == "__main__":
 
     # Parse arguments
     parser = argparse.ArgumentParser(description="Run simple Bedretto case.")
-    parser.add_argument("--ad-mode", type=str, default="picard", help="AD mode.")
     parser.add_argument(
-        "--formulation", type=str, default="rr-nonlinear", help="Formulation to use."
+        "--formulation",
+        type=str,
+        default="rr-nonlinear",
+        help="""Nonlinear formulation to use (rr-nonlinear [default], """
+        """rr-linear, ncp-min, ncp-fb).""",
     )
     parser.add_argument(
-        "--num-fractures", type=int, default=6, help="Number of fractures."
+        "--linearization",
+        type=str,
+        default="picard",
+        help="AD mode (Picard [default], Newton).",
+    )
+    parser.add_argument(
+        "--relaxation",
+        type=str,
+        default="None",
+        help="Relaxation method (None [default], Picard, Newton).",
+    )
+    parser.add_argument(
+        "--linear-solver",
+        type=str,
+        default="scipy_sparse",
+        help="Linear solver to use. (scipy_sparse [default], pypardiso, fthm).",
+    )
+    parser.add_argument(
+        "--num-fractures",
+        type=int,
+        default=6,
+        help="Number of fractures (1-6 [default]).",
     )
     args = parser.parse_args()
-    ad_mode = args.ad_mode
-    formulation = args.formulation
 
     # Model parameters
     model_params = {
@@ -111,10 +137,11 @@ if __name__ == "__main__":
         "linear_solver": "scipy_sparse",
         "max_iterations": 200,  # Needed for export
         "folder_name": Path("visualization/simple_bedretto")
-        / generate_case_name(ad_mode, formulation),
+        / generate_case_name(
+            args.formulation, args.linearization, args.relaxation, args.linear_solver
+        ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
-    Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
 
     # Solver parameters
     solver_params = {
@@ -130,107 +157,123 @@ if __name__ == "__main__":
         "nl_convergence_tol_res_rel_tight": 1e-10,
     }
 
-    match ad_mode:
+    # Model setup
+    Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
+    logger.info(f"\n\nRunning {model_params['folder_name']}")
+
+    # Define formulation
+    match args.formulation.lower():
+        case "rr-nonlinear":
+            Model = NonlinearRadialReturnModel
+
+        case "rr-linear":
+            Model = LinearRadialReturnModel
+
+        case "ncp-min":
+            model_params["ncp_type"] = "min"
+            Model = NCPModel
+
+        case "ncp-fb":
+            model_params["ncp_type"] = "fb"
+            Model = NCPModel
+
+        case "ncp-fb-full":
+            model_params["ncp_type"] = "fb-full"
+            Model = NCPModel
+
+        case _:
+            raise ValueError(f"formulation {args.formulation} not recognized.")
+
+    # Choose nonlinear solver (Newton with relaxation)
+    match args.linearization.lower():
         case "picard":
             ...
 
         case "newton":
 
-            class NonlinearRadialReturnModel(
-                DarcysLawAd, NonlinearRadialReturnModel
-            ): ...
-
-            class LinearRadialReturnModel(DarcysLawAd, LinearRadialReturnModel): ...
-
-            class NCPModel(DarcysLawAd, NCPModel): ...
+            class Model(DarcysLawAd, Model):
+                """Enhance with AD of permeability."""
 
         case _:
-            raise ValueError(f"AD mode {ad_mode} not recognized.")
+            raise ValueError(f"AD mode {args.linearization} not recognized.")
 
-    # Model setup
-    logger.info(f"\n\nRunning {model_params['folder_name']}")
-    if formulation == "rr-nonlinear":
-        model = NonlinearRadialReturnModel(model_params)
+    # Choose relaxation method
+    match args.relaxation.lower():
+        case "none":
+            ...
 
-    elif formulation == "rr-linear":
-        model = LinearRadialReturnModel(model_params)
+        case "linesearch":
 
-    elif formulation == "ncp-min":
-        model_params["ncp_type"] = "min"
-        model = NCPModel(model_params)
+            class Model(
+                pp.models.solution_strategy.ContactIndicators,
+                Model,
+            ):
+                """Added contact indicators for line search."""
 
-    elif formulation == "ncp-fb":
-        model_params["ncp_type"] = "fb"
-        model = NCPModel(model_params)
+            class ConstraintLineSearchNonlinearSolver(
+                line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
+                line_search.SplineInterpolationLineSearch,  # Technical implementation of
+                # the actual search along given update direction
+                line_search.LineSearchNewtonSolver,  # General line search.
+            ): ...
 
-    elif formulation == "ncp-fb-full":
-        model_params["ncp_type"] = "fb-full"
-        model = NCPModel(model_params)
+            solver_params["nonlinear_solver"] = ConstraintLineSearchNonlinearSolver
+            solver_params["Global_line_search"] = (
+                0  # Set to 1 to use turn on a residual-based line search
+            )
+            solver_params["Local_line_search"] = (
+                1  # Set to 0 to use turn off the tailored line search
+            )
+            solver_params["adaptive_indicator_scaling"] = (
+                1  # Scale the indicator adaptively to increase robustness
+            )
 
-    elif formulation == "rr-nonlinear-linesearch":
+        case "return-map":
 
-        class NonlinearRadialReturnModel(
-            pp.models.solution_strategy.ContactIndicators,
-            NonlinearRadialReturnModel,
-        ):
-            """Added contact indicators for line search."""
+            class Model(
+                NewtonReturnMap,
+                Model,
+            ):
+                """Add return map before each iteration."""
 
-        model = NonlinearRadialReturnModel(model_params)
+        case _:
+            raise ValueError(f"Relaxation method {args.relaxation} not recognized.")
 
-        class ConstraintLineSearchNonlinearSolver(
-            line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
-            line_search.SplineInterpolationLineSearch,  # Technical implementation of
-            # the actual search along given update direction
-            line_search.LineSearchNewtonSolver,  # General line search.
-        ): ...
+    # Choose linear solver
+    match args.linear_solver.lower():
+        case "scipy_sparse":
+            # Use scipy sparse solver
+            model_params["linear_solver"] = "scipy_sparse"
+            solver_params["linear_solver"] = "scipy_sparse"
+        case "pypardiso":
+            # Use pypardiso solver
+            model_params["linear_solver"] = "pypardiso"
+            solver_params["linear_solver"] = "pypardiso"
+        case "fthm":
 
-        solver_params["nonlinear_solver"] = ConstraintLineSearchNonlinearSolver
-        solver_params["Global_line_search"] = (
-            0  # Set to 1 to use turn on a residual-based line search
-        )
-        solver_params["Local_line_search"] = (
-            1  # Set to 0 to use turn off the tailored line search
-        )
-        solver_params["adaptive_indicator_scaling"] = (
-            1  # Scale the indicator adaptively to increase robustness
-        )
+            class Model(
+                IterativeHMSolver,
+                Model,
+            ): ...
 
-    elif formulation == "rr-nonlinear-return-map":
+            model_params["linear_solver_config"] = {
+                # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
+                # For HM, this parameter is ignored.
+                "solver": "CPR",
+                "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
+                "logging": False,  # Does not work well with a progress bar.
+                "treat_singularity_contact": False,
+            }
+            solver_params["linear_solver_config"] = model_params["linear_solver_config"]
 
-        class NonlinearRadialReturnModel(
-            NewtonReturnMap,
-            NonlinearRadialReturnModel,
-        ):
-            """Add return map before each iteration."""
+        case _:
+            raise ValueError(f"Linear solver {args.linear_solver} not recognized.")
 
-        model = NonlinearRadialReturnModel(model_params)
-
-    elif formulation == "rr-nonlinear-fthm":
-
-        class NonlinearRadialReturnModel(
-            IterativeHMSolver,
-            NonlinearRadialReturnModel,
-        ):
-            """Add return map before each iteration."""
-
-        model_params["linear_solver_config"] = {
-            # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
-            # For HM, this parameter is ignored.
-            "solver": "CPR",
-            "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
-            "logging": False,  # Does not work well with a progress bar.
-            # Apply a linear transformation to avoid problem with the singular contact
-            # mechanics submatrix. Required for the default PP formulation.
-            "treat_singularity_contact": True,
-        }
-        solver_params["linear_solver_config"] = model_params["linear_solver_config"]
-        model = NonlinearRadialReturnModel(model_params)
-
-    else:
-        raise ValueError(f"formulation {formulation} not recognized.")
-
+    # Run the model
+    model = Model(model_params)
     pp.run_time_dependent_model(model, solver_params)
 
+    # Simple statistics
     logger.info(
         f"\nTotal number of iterations: {model.nonlinear_solver_statistics.cache_num_iteration}"
     )
