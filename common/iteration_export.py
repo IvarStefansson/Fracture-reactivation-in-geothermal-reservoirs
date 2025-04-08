@@ -414,9 +414,6 @@ class IterationExporting:
             del self.cached_contact_normal_residuals
         if hasattr(self, "cached_contact_tangential_residuals"):
             del self.cached_contact_tangential_residuals
-        # if hasattr(self, "previous_states"):
-        #    assert hasattr(self, "states")
-        #    self.previous_states = self.states.copy()
 
     def check_cycling(self):
         """Check for cycling in contact states."""
@@ -506,7 +503,6 @@ class IterationExporting:
                 )
             except:
                 total_changes = 0
-            logger.info(f"Total changes: {total_changes}")
 
             # Check if changes are small
             if total_changes < 7:
@@ -622,7 +618,6 @@ class IterationExporting:
         self.save_data_iteration()
         self.iteration_exporter.write_pvd()
         self.check_cycling()
-        # print()  # force progressbar to output.
 
     def after_nonlinear_convergence(self):
         super().after_nonlinear_convergence()

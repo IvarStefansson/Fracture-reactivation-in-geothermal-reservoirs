@@ -22,7 +22,7 @@ from common.contact_mechanics import AuxiliaryContact
 from common.fracture_states import FractureStates
 from common.iteration_export import IterationExporting
 from common.norms import LebesgueConvergenceMetrics
-from common.statistics import AdvancedSolverStatistics, LogPerformanceDataVectorial
+from common.statistics import AdvancedSolverStatistics, LogPerformanceData
 
 from common.contact_mechanics import (
     LinearRadialReturnTangentialContact,
@@ -44,7 +44,7 @@ class NonlinearRadialReturnModel(
     FractureStates,  # Physics based contact states for output only
     IterationExporting,  # Tailored export
     LebesgueConvergenceMetrics,  # Convergence metrics
-    LogPerformanceDataVectorial,  # Tailored convergence checks
+    LogPerformanceData,  # Tailored convergence checks
     ReverseElasticModuli,  # Characteristic displacement from traction
     Physics,  # Basic model, BC and IC
 ):
