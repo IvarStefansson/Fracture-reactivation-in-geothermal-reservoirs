@@ -95,11 +95,7 @@ class ScaledContact:
         # of a gradient length.
         youngs_modulus = self.youngs_modulus(subdomains)
         size = pp.ad.Scalar(np.max(self.domain.side_lengths()))
-        val = (
-            youngs_modulus
-            / size
-            / self.characteristic_contact_traction(subdomains)
-        )
+        val = youngs_modulus / size / self.characteristic_contact_traction(subdomains)
         val.set_name("Contact_mechanics_numerical_constant")
         return val
 
@@ -151,7 +147,7 @@ class NCPTangentialContact:
         """
 
         characteristic_distance = self.characteristic_jump(subdomains)
-        val = pp.ad.Scalar(1.) / characteristic_distance
+        val = pp.ad.Scalar(1.0) / characteristic_distance
         return val
 
     def tangential_fracture_deformation_equation(
@@ -441,13 +437,11 @@ class LinearRadialReturnTangentialContact:
         b_p.set_name("bp")
 
         # For the use of @, see previous comment.
-        min_term = (
-            scalar_to_tangential @ (
-                pp.ad.Scalar(-1.0)
-                * f_max(
-                    pp.ad.Scalar(-1.0) * ones_frac,
-                    pp.ad.Scalar(-1.0) * b_p / norm_tangential_sum,
-                )
+        min_term = scalar_to_tangential @ (
+            pp.ad.Scalar(-1.0)
+            * f_max(
+                pp.ad.Scalar(-1.0) * ones_frac,
+                pp.ad.Scalar(-1.0) * b_p / norm_tangential_sum,
             )
         )
 
@@ -459,11 +453,14 @@ class LinearRadialReturnTangentialContact:
         equation.set_name("tangential_fracture_deformation_equation")
         return equation
 
+
 class NCPContact(
     ScaledContact,
     NCPNormalContact,
     NCPTangentialContact,
-): """Collect all NCP contact models."""
+):
+    """Collect all NCP contact models."""
+
 
 class AuxiliaryContact:
     def yield_criterion(self, subdomains: list[pp.Grid]):

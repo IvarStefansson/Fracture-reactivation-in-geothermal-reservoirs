@@ -8,13 +8,12 @@ import porepy as pp
 # boundary. Similarly, if the normal traction is larger than zero, it is
 # projected back to the "boundary" of zero.
 
-class NewtonReturnMap:
 
+class NewtonReturnMap:
     # Note: We perform the return map before the nonlinear iteration (i.e. after the previous iteration)
     # since we want the convergence check to be done on the regular Newton update. It is not done
     # before the very first iteration.
     def before_nonlinear_iteration(self) -> None:
-
         if self.nonlinear_solver_statistics.num_iteration > 0:
             # Evaluate tractions and the friction bound.
             fracture_domains = self.mdg.subdomains(dim=self.nd - 1)
@@ -22,8 +21,12 @@ class NewtonReturnMap:
             normal_basis = self.normal_component(fracture_domains)
             tangential_basis = self.tangential_component(fracture_domains)
 
-            t_t = self.tangential_component(fracture_domains) @ self.contact_traction(fracture_domains)
-            t_n = self.normal_component(fracture_domains) @ self.contact_traction(fracture_domains)
+            t_t = self.tangential_component(fracture_domains) @ self.contact_traction(
+                fracture_domains
+            )
+            t_n = self.normal_component(fracture_domains) @ self.contact_traction(
+                fracture_domains
+            )
             t_t_eval = t_t.value(self.equation_system)
             t_n_eval = t_n.value(self.equation_system)
 
@@ -59,7 +62,9 @@ class NewtonReturnMap:
             for i in range(len(t_n_new)):
                 if t_n_new[i] > 0:
                     t_n_new[i] = 0  # Set the normal traction to zero.
-            friction_coeff = self.friction_coefficient(fracture_domains).value(self.equation_system)
+            friction_coeff = self.friction_coefficient(fracture_domains).value(
+                self.equation_system
+            )
             friction_bound = -1.0 * friction_coeff * t_n_new
             # Return map in tangential direction, using the newly
             # obtained normal tractions.
@@ -87,7 +92,7 @@ class NewtonReturnMap:
             # transpose. This should leave tangential_prolongation as a list of
             # ArraySlicers.
             tangential_prolongation = [e._slicer.T for e in tangential_restriction]
-            
+
             # Apply the normal projection operator to the normal traction.
             t_eval_new = normal_prolongation @ t_n_new
             # Loop over the tangential projection operators and apply them to the
@@ -97,6 +102,8 @@ class NewtonReturnMap:
                 t_eval_new += e_i @ t_t_new[:, ind]
 
             # Update traction values after having performed the return map.
-            self.equation_system.set_variable_values(t_eval_new, variables=[self.contact_traction_variable], iterate_index=0)
+            self.equation_system.set_variable_values(
+                t_eval_new, variables=[self.contact_traction_variable], iterate_index=0
+            )
 
         super().before_nonlinear_iteration()

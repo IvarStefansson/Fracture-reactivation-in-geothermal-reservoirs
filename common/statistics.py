@@ -129,9 +129,11 @@ class LogPerformanceData:
             )
 
             return converged, diverged
-        
+
         # Contact state changes
-        total_contact_state_changes = self.nonlinear_solver_statistics.total_contact_state_changes
+        total_contact_state_changes = (
+            self.nonlinear_solver_statistics.total_contact_state_changes
+        )
 
         # Increment based norm
         nonlinear_increment_norms = self.compute_nonlinear_increment_norm(
@@ -260,9 +262,7 @@ class LogPerformanceData:
             if converged:
                 print("Converged with residuals.")
 
-
         return converged, diverged
-
 
     def _initialize_linear_solver(self) -> None:
         """Overwrite the default initialization to allow further linear solvers."""
