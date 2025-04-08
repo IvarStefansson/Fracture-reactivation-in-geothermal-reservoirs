@@ -64,12 +64,15 @@ class NCPModel(
     """Simple Bedretto model solved with NCP formulation."""
 
 
-def generate_case_name(formulation, linearization, relaxation, linear_solver):
+def generate_case_name(
+    num_fractures, formulation, linearization, relaxation, linear_solver
+):
+    folder = Path(f"simple_bedretto_{num_fractures}")
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
     name += f"_{linear_solver.lower()}"
-    return name
+    return folder / name
 
 
 if __name__ == "__main__":
@@ -136,9 +139,13 @@ if __name__ == "__main__":
         "export_constants_separately": False,
         "linear_solver": "scipy_sparse",
         "max_iterations": 200,  # Needed for export
-        "folder_name": Path("visualization/simple_bedretto")
+        "folder_name": Path("visualization")
         / generate_case_name(
-            args.formulation, args.linearization, args.relaxation, args.linear_solver
+            args.num_fractures,
+            args.formulation,
+            args.linearization,
+            args.relaxation,
+            args.linear_solver,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
@@ -262,7 +269,7 @@ if __name__ == "__main__":
                 "solver": "CPR",
                 "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
                 "logging": False,  # Does not work well with a progress bar.
-                "treat_singularity_contact": False,
+                "treat_singularity_contact": True,
             }
             solver_params["linear_solver_config"] = model_params["linear_solver_config"]
 
