@@ -9,7 +9,7 @@ from porepy.models.fluid_mass_balance import FluidMassBalanceEquations
 # ! ---- MATERIAL PARAMETERS ----
 
 fluid_parameters: dict[str, float] = {
-    "compressibility": 0,  # 1e-16,
+    "compressibility": 0,
     "viscosity": 1e-3,
     "density": 998.2e0,
 }
@@ -17,11 +17,11 @@ fluid_parameters: dict[str, float] = {
 solid_parameters: dict[str, float] = {
     "biot_coefficient": 1.0,
     "permeability": 1e-14,
-    "normal_permeability": 1e-14,  # 1e-4, # Ivar: 1e-6
+    "normal_permeability": 1e-14,
     "porosity": 1.0e-2,
     "shear_modulus": 1e14,
     "lame_lambda": 1e14,
-    "residual_aperture": 1e-3,  # 1e-2, # Ivar: 1e-3
+    "residual_aperture": 1e-3,
     "density": 2600,
     "maximum_elastic_fracture_opening": 0e-3,  # Not used
     "fracture_normal_stiffness": 1e3,  # Not used
@@ -33,12 +33,12 @@ solid_parameters: dict[str, float] = {
 
 injection_schedule = {
     "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
-    "pressure": [0,0] + [3e7, 5e7, 10e7, 5e7, 5e7],
+    "pressure": [0, 0] + [3e7, 5e7, 10e7, 5e7, 5e7],
     "reference_pressure": 1e7,
 }
 
-principal_background_stress_max_factor = 1.3  # 1.3  # 24e6  # 24 MPa
-principal_background_stress_min_factor = 0.8  # 0.8  # 14e6  # 14 MPa
+principal_background_stress_max_factor = 1.3
+principal_background_stress_min_factor = 0.8
 background_stress_deg = 100 * (np.pi / 180)  # N100 degrees East
 
 numerics_parameters: dict[str, float] = {
@@ -46,22 +46,6 @@ numerics_parameters: dict[str, float] = {
     "characteristic_contact_traction": injection_schedule["reference_pressure"],
     "contact_mechanics_scaling": 1.0,
 }
-
-
-
-class RampedGravity:
-    def update_time_dependent_ad_arrays(self) -> None:
-        super().update_time_dependent_ad_arrays()
-        if not hasattr(self, "ref_gravity"):
-            self.ref_gravity = pp.GRAVITY_ACCELERATION
-        ramp = 10
-        if self.time_manager.time < ramp * pp.DAY:
-            pp.GRAVITY_ACCELERATION = (
-                self.time_manager.time / (ramp * pp.DAY) * self.ref_gravity
-            )
-        else:
-            pp.GRAVITY_ACCELERATION = self.ref_gravity
-
 
 class HydrostaticPressureBC:
     """Hydrostatic pressure boundary condition active on all sides of the domain."""
@@ -177,10 +161,8 @@ class LithostaticPressureBC:
     onset: bool
 
     def bc_type_mechanics(self, sd: pp.Grid) -> pp.BoundaryConditionVectorial:
-        boundary_faces =self.domain_boundary_sides(sd).all_bf
-        bc = pp.BoundaryConditionVectorial(
-            sd, boundary_faces, "dir"
-        )
+        boundary_faces = self.domain_boundary_sides(sd).all_bf
+        bc = pp.BoundaryConditionVectorial(sd, boundary_faces, "dir")
         bc.internal_to_dirichlet(sd)
 
         domain_sides = self.domain_boundary_sides(sd)
@@ -203,14 +185,18 @@ class LithostaticPressureBC:
                 center_x = np.mean(sd.cell_centers[0, domain_sides.bottom])
                 center_y = np.mean(sd.cell_centers[1, domain_sides.bottom])
                 center_z = np.mean(sd.cell_centers[2, domain_sides.bottom])
-                fixed_cell = sd.closest_cell(
-                    np.array([center_x, center_y, center_z])
-                )
-                #fixed_cell = np.argmax(domain_sides.bottom)
+                fixed_cell = sd.closest_cell(np.array([center_x, center_y, center_z]))
+                # fixed_cell = np.argmax(domain_sides.bottom)
                 bc.is_dir[:, fixed_cell] = True
                 bc.is_neu[:, fixed_cell] = False
 
-            for side in [domain_sides.north, domain_sides.south, domain_sides.east, domain_sides.west, domain_sides.top]:
+            for side in [
+                domain_sides.north,
+                domain_sides.south,
+                domain_sides.east,
+                domain_sides.west,
+                domain_sides.top,
+            ]:
                 bc.is_dir[:, side] = False
                 bc.is_neu[:, side] = True
 
@@ -228,12 +214,21 @@ class LithostaticPressureBC:
             # Stress times normal
             for dir, orientation, side in zip(
                 [0, 0, 1, 1, 2],
-                [-1,1,-1,1,1],
-                [domain_sides.north, domain_sides.south, domain_sides.east, domain_sides.west, domain_sides.top],
+                [-1, 1, -1, 1, 1],
+                [
+                    domain_sides.north,
+                    domain_sides.south,
+                    domain_sides.east,
+                    domain_sides.west,
+                    domain_sides.top,
+                ],
             ):
                 for i in range(self.nd):
-                    vals[i, side] = orientation * background_stress_tensor[i,dir, side] * boundary_grid.cell_volumes[domain_sides.top]
-            
+                    vals[i, side] = (
+                        orientation
+                        * background_stress_tensor[i, dir, side]
+                        * boundary_grid.cell_volumes[domain_sides.top]
+                    )
 
         return vals.ravel("F")
 
@@ -310,7 +305,8 @@ class HydrostaticPressureInitialization:
 
             pp.set_solution_values(
                 name="pressure_constraint_indicator",
-                values=(self.time_manager.time < 1 * pp.DAY + 1e-5) * np.ones(sd.num_cells, dtype=float),
+                values=(self.time_manager.time < 1 * pp.DAY + 1e-5)
+                * np.ones(sd.num_cells, dtype=float),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
             )
@@ -349,7 +345,9 @@ class PressureConstraintWell:
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
                 name="current_injection_pressure",
-                values=np.array([self.units.convert_units(current_injection_pressure, "Pa")]),
+                values=np.array(
+                    [self.units.convert_units(current_injection_pressure, "Pa")]
+                ),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
             )
@@ -391,7 +389,14 @@ class PressureConstraintWell:
         current_injection_pressure = pp.ad.TimeDependentDenseArray(
             "current_injection_pressure", [self.mdg.subdomains()[0]]
         )
-        constrained_eq = self.pressure(subdomains) - current_injection_pressure
+        hydrostatic_pressure = pp.ad.TimeDependentDenseArray(
+            "hydrostatic_pressure", subdomains
+        )
+        constrained_eq = (
+            self.pressure(subdomains)
+            - current_injection_pressure
+            - hydrostatic_pressure
+        )
 
         eq_with_pressure_constraint = (
             pp.ad.DenseArray(reverse_indicator) * std_eq
