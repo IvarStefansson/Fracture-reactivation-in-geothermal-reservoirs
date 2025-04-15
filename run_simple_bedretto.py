@@ -6,31 +6,30 @@ import time
 from pathlib import Path
 
 import porepy as pp
-from porepy.numerics.nonlinear import line_search
 from simple_bedretto.geometry import BedrettoGeometry
-from common.numerics import (
-    DarcysLawAd,
-    ReverseElasticModuli,
-)
 from simple_bedretto.physics import (
     Physics,
     fluid_parameters,
     numerics_parameters,
     solid_parameters,
 )
-from common.contact_mechanics import AuxiliaryContact
-from common.fracture_states import FractureStates
-from common.iteration_export import IterationExporting
-from common.norms import LebesgueConvergenceMetrics
-from common.statistics import AdvancedSolverStatistics, LogPerformanceData
-
-from common.contact_mechanics import (
+from ncp import (
+    DarcysLawAd,
+    ReverseElasticModuli,
+    AuxiliaryContact,
+    FractureStates,
+    IterationExporting,
+    LebesgueConvergenceMetrics,
+    AdvancedSolverStatistics,
+    LogPerformanceDataVectorial,
     LinearRadialReturnTangentialContact,
-    NCPContact,
+    NCPNormalContact,
+    NCPTangentialContact,
+    ScaledContact,
 )
-
 from common.newton_return_map import NewtonReturnMap
 from FTHM_Solver.hm_solver import IterativeHMSolver
+from porepy.numerics.nonlinear import line_search
 
 
 # Set logging level
@@ -44,7 +43,7 @@ class NonlinearRadialReturnModel(
     FractureStates,  # Physics based contact states for output only
     IterationExporting,  # Tailored export
     LebesgueConvergenceMetrics,  # Convergence metrics
-    LogPerformanceData,  # Tailored convergence checks
+    LogPerformanceDataVectorial,  # Tailored convergence checks
     ReverseElasticModuli,  # Characteristic displacement from traction
     Physics,  # Basic model, BC and IC
 ):
@@ -58,7 +57,9 @@ class LinearRadialReturnModel(
 
 
 class NCPModel(
-    NCPContact,
+    ScaledContact,
+    NCPNormalContact,  # Normal contact model
+    NCPTangentialContact,  # Tangential contact model
     NonlinearRadialReturnModel,
 ):
     """Simple Bedretto model solved with NCP formulation."""
@@ -178,14 +179,18 @@ if __name__ == "__main__":
 
         case "ncp-min":
             model_params["ncp_type"] = "min"
+            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
+
             Model = NCPModel
 
         case "ncp-fb":
             model_params["ncp_type"] = "fb"
+            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
             Model = NCPModel
 
-        case "ncp-fb-full":
-            model_params["ncp_type"] = "fb-full"
+        case "ncp-fb-partial":
+            model_params["ncp_type"] = "fb-partial"
+            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
             Model = NCPModel
 
         case _:
