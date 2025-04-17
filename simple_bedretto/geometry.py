@@ -20,10 +20,12 @@ class BedrettoGeometry(CubeDomainOrthogonalFractures):
 
     def meshing_arguments(self) -> dict:
         mesh_args = {}
-        # mesh_args["cell_size"] = self.units.convert_units(500, "m")
-        # mesh_args["cell_size_fracture"] = self.units.convert_units(100, "m")
-        mesh_args["cell_size"] = self.units.convert_units(1000, "m")
-        mesh_args["cell_size_fracture"] = self.units.convert_units(500, "m")
+        cell_size = self.params.get("cell_size", 1000)
+        cell_size_fracture = self.params.get("cell_size_fracture", 500)
+        mesh_args["cell_size"] = self.units.convert_units(cell_size, "m")
+        mesh_args["cell_size_fracture"] = self.units.convert_units(
+            cell_size_fracture, "m"
+        )
         return mesh_args
 
     def grid_type(self) -> str:
