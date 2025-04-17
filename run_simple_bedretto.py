@@ -120,9 +120,10 @@ if __name__ == "__main__":
         # Geometry
         "gmsh_file_name": "msh/gmsh_frac_file.msh",
         "num_fractures": args.num_fractures,
+        "cell_size": 1000,  # Size of the cells in the mesh
+        "cell_size_fracture": 500,  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
-            # TODO allow for negative times in PP for initialization
             schedule=[0, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
             dt_init=pp.DAY,
             constant_dt=True,
@@ -271,6 +272,10 @@ if __name__ == "__main__":
             model_params["linear_solver_config"] = {
                 # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
                 # For HM, this parameter is ignored.
+                "ksp_atol": 1e-15,
+                "ksp_rtol": 1e-10,
+                "ksp_max_it": 90,
+                "ksp_gmres_restart": 90,
                 "solver": "CPR",
                 "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
                 "logging": False,  # Does not work well with a progress bar.
