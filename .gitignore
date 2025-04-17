@@ -166,3 +166,5 @@ cython_debug/
 .nfs*
 *.zip
 *.tar
+*.npy
+*.npz
