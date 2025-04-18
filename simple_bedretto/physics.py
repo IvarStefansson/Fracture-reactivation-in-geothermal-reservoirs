@@ -99,11 +99,13 @@ class BackgroundStress:
     def vertical_background_stress(self, grid: pp.Grid) -> np.ndarray:
         """Vertical background stress."""
         gravity = self.units.convert_units(pp.GRAVITY_ACCELERATION, "m*s^-2")
-        bulk_density = (
-            self.solid.porosity * self.fluid.density([grid]).value(self.equation_system)
-            + (1 - self.solid.porosity) * self.solid.density
-        )
-        rho_g = bulk_density * gravity
+        #bulk_density = (
+        #    self.solid.porosity * self.fluid.density([grid]).value(self.equation_system)
+        #    + (1 - self.solid.porosity) * self.solid.density
+        #)
+        #rho_g = bulk_density * gravity
+        # PorePy neglects fluid effects in the momentum balance - use only the solid
+        rho_g = self.solid.density * gravity
         z = grid.cell_centers[-1]
         s_v = -rho_g * z
         return -s_v
