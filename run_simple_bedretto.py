@@ -27,7 +27,7 @@ from ncp import (
     NCPTangentialContact,
     ScaledContact,
 )
-from common.newton_return_map import NewtonReturnMap
+from egc import NewtonReturnMap
 from FTHM_Solver.hm_solver import IterativeHMSolver
 from porepy.numerics.nonlinear import line_search
 

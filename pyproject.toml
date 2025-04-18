@@ -1,0 +1,35 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+dependencies = [
+]
+name = "egc"
+version = "0.0.1"
+description = "Extensions of PorePy to run fracture stimulation examples for EGC proceeding"
+keywords = ["porepy", "egc", "fracture stimulation"]
+maintainers = [
+    { name = "Jakub Both", email = "jakub.both@uib.no" },
+    { name = "Eirik Keilegavlen", email = "eirik.keilegavlen@uib.no" },
+    { name = "Marius Nevland", email = "marius.nevland@uib.no" },
+    { name = "Ivar Stefansson", email = "ivar.stefansson@uib.no" },
+    { name = "Yury Zabegaev", email = "yury.zabegaev@uib.no" },
+]
+license = { text = "GPLv3" }
+readme = "README.md"
+requires-python = ">=3.13"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+"egc" = ["py.typed"]
+
+[tool.ruff]
+line-length = 88
+
+[tool.ruff.lint]
+select = ["E501"]
+ignore = ["E731", "E266"]
+exclude = ["__init__.py"]
