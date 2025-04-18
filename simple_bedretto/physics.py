@@ -229,7 +229,7 @@ class LithostaticPressureBC:
                     vals[i, side] = (
                         orientation
                         * background_stress_tensor[i, dir, side]
-                        * boundary_grid.cell_volumes[domain_sides.top]
+                        * boundary_grid.cell_volumes[side]
                     )
 
         return vals.ravel("F")
