@@ -87,8 +87,8 @@ class BedrettoMB1_Geometry(CubeDomainOrthogonalFractures):
             # Fracture 13
             ((106, 222), (113, 209)),
             ((113, 209), (138, 178)),
-            # Fracture 14 - stimulated fracture!
-            ((59, 287), (91, 244)),
+            # Fracture 14
+            ((59, 287), (91, 244)), # stimulated fracture segment
             ((91, 244), (113, 222)),
             ((113, 222), (118, 218)),
             # Fracture 15
@@ -126,6 +126,9 @@ class BedrettoMB1_Geometry(CubeDomainOrthogonalFractures):
             x_end, y_end = pt[1]
             fractures_end_points.append(np.array([[x, depth-y], [x_end, depth-y_end]]))
         fractures = [pp.LineFracture(pts.T) for pts in fractures_end_points]
+
+        # Identify the stimulated fracture segment
+        self.stimulated_fracture_id = 29
 
         # TODO: Add boreholes - need to be treated differently than fractures in the modeling - can we use open wells?
         boreholes_end_points_local = []
