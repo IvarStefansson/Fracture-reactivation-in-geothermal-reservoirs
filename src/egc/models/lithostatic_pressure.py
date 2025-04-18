@@ -2,21 +2,27 @@ import porepy as pp
 from typing import Callable
 import numpy as np
 
+
 class BackgroundStress:
-    def vertical_background_stress(self, grid: pp.Grid) -> np.ndarray:
-        """Vertical background stress."""
+    def lithostatic_pressure(self, grid: pp.Grid) -> np.ndarray:
+        """Lithostatic pressure."""
+        p_0 = 0  # Initial stress at z=0
         gravity = self.units.convert_units(pp.GRAVITY_ACCELERATION, "m*s^-2")
         rho_g = self.solid.density * gravity
-        z = grid.cell_centers[self.nd-1]
-        s_v = -rho_g * z
-        return -s_v
+        z = grid.cell_centers[self.nd - 1]
+        return p_0 - rho_g * z
+
+    def vertical_background_stress(self, grid: pp.Grid) -> np.ndarray:
+        """Vertical background stress."""
+        # NOTE: The convention in PP is that compressive stresses are negative.
+        return -self.lithostatic_pressure(grid)
 
     def horizontal_background_stress(self, grid: pp.Grid) -> np.ndarray:
         """Zero horizontal background stress."""
         s_v = self.vertical_background_stress(grid)
         s_h = np.zeros((self.nd - 1, self.nd - 1, grid.num_cells))
-        scaling = 0.
-        for i, j in np.ndindex(self.nd-1, self.nd-1):
+        scaling = 0.0
+        for i, j in np.ndindex(self.nd - 1, self.nd - 1):
             s_h[i, j] = scaling * s_v
         return s_h
 
@@ -26,10 +32,11 @@ class BackgroundStress:
         s_h = self.horizontal_background_stress(grid)
         s_v = self.vertical_background_stress(grid)
         s = np.zeros((self.nd, self.nd, grid.num_cells))
-        for i, j in np.ndindex(self.nd-1, self.nd-1):
+        for i, j in np.ndindex(self.nd - 1, self.nd - 1):
             s[i, j] = s_h[i, j]
         s[-1, -1] = s_v
         return s
+
 
 class LithostaticPressureBC:
     """Mechanical boundary conditions.
@@ -56,14 +63,14 @@ class LithostaticPressureBC:
             return [domain_sides.south]
         elif self.nd == 3:
             return [domain_sides.bottom]
-        
+
     def _momentum_balance_neumann_sides(self, sd: pp.Grid) -> np.ndarray:
         domain_sides = self.domain_boundary_sides(sd)
         if self.nd == 2:
             return [
-                domain_sides.north,
                 domain_sides.east,
                 domain_sides.west,
+                domain_sides.north,
             ]
         elif self.nd == 3:
             return [
@@ -89,17 +96,23 @@ class LithostaticPressureBC:
         return bc
 
     def _orientations(self, boundary_grid: pp.BoundaryGrid) -> tuple:
+        """Return normal direction (axis and orientation) for each domain side."""
         domain_sides = self.domain_boundary_sides(boundary_grid)
         if self.nd == 2:
             return (
-                [0,0,1,1],
-                [-1,1,-1,1],
-                [domain_sides.west, domain_sides.east, domain_sides.south, domain_sides.north],
+                [0, 0, 1, 1],
+                [-1, 1, -1, 1],
+                [
+                    domain_sides.west,
+                    domain_sides.east,
+                    domain_sides.south,
+                    domain_sides.north,
+                ],
             )
         elif self.nd == 3:
             return (
-                [0,0,1,1,2,2],
-                [-1,1,-1,1,-1,1],
+                [0, 0, 1, 1, 2, 2],
+                [-1, 1, -1, 1, -1, 1],
                 [
                     domain_sides.west,
                     domain_sides.east,
@@ -119,15 +132,24 @@ class LithostaticPressureBC:
             background_stress_tensor = self.background_stress(boundary_grid)
 
             # Stress times normal
-            directions, orientations, sides = self._orientations(boundary_grid)
-            for dir, orientation, side in zip(directions, orientations, sides):
-                active_side = side[np.isin(side, np.concatenate(self._momentum_balance_neumann_sides(boundary_grid)))]
-                if not active_side.any():
+            normal_directions, normal_orientations, sides = self._orientations(
+                boundary_grid
+            )
+            neumann_sides = self._momentum_balance_neumann_sides(boundary_grid)
+            all_neumann_sides = neumann_sides[0]
+            for i in range(1, len(neumann_sides)):
+                all_neumann_sides = all_neumann_sides | neumann_sides[i]
+            for normal_direction, normal_orientation, side in zip(
+                normal_directions, normal_orientations, sides
+            ):
+                active_side = np.logical_and(side, all_neumann_sides)
+                if not np.any(active_side):
                     continue
                 for i in range(self.nd):
                     vals[i, active_side] = (
-                        orientation
-                        * background_stress_tensor[i, dir, active_side]
+                        normal_orientation
+                        # Stress-normal-area product/integration
+                        * background_stress_tensor[i, normal_direction, active_side]
                         * boundary_grid.cell_volumes[active_side]
                     )
 
