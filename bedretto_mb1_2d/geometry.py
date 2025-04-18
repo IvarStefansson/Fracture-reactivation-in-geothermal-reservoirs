@@ -1,5 +1,12 @@
 """Implementation of two-dimensional Bedretto-like geometry inspired
-from 
+from Vaezi et al (2024), "Numerical modeling of hydraulic stimulation of
+fractured crystalline rock at the bedretto underground laboratory
+for geosciences and geoenergies", International Journal of Rock Mechanics
+and Mining Sciences, 176, 105689.
+
+The geometry is adapted from the figures provided in the paper. Coordinates
+are in meters and the domain is in local coordinates with y=0 at the top
+and pointing downwards.
 
 """
 
