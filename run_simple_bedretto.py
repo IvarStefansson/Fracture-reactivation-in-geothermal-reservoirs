@@ -270,12 +270,13 @@ if __name__ == "__main__":
             ): ...
 
             model_params["linear_solver_config"] = {
-                # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
-                # For HM, this parameter is ignored.
+                # GMRES parameters
                 "ksp_atol": 1e-15,
                 "ksp_rtol": 1e-10,
                 "ksp_max_it": 90,
                 "ksp_gmres_restart": 90,
+                # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
+                # For HM, this parameter is ignored.
                 "solver": "CPR",
                 "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
                 "logging": False,  # Does not work well with a progress bar.
