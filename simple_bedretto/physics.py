@@ -412,7 +412,7 @@ class PressureConstraintWell:
 
 
 class Physics(
-    # NonzeroInitialCondition,
+    NonzeroInitialCondition,
     BackgroundStress,
     HydrostaticPressureBC,
     LithostaticPressureBC,
