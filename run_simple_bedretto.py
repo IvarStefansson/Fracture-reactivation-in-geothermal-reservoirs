@@ -4,6 +4,7 @@ import argparse
 import logging
 import time
 from pathlib import Path
+import numpy as np
 
 import porepy as pp
 from simple_bedretto.geometry import BedrettoGeometry
@@ -66,13 +67,15 @@ class NCPModel(
 
 
 def generate_case_name(
-    num_fractures, formulation, linearization, relaxation, linear_solver
+    num_fractures, formulation, linearization, relaxation, linear_solver, args_mass_unit
 ):
     folder = Path(f"simple_bedretto_{num_fractures}")
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
     name += f"_{linear_solver.lower()}"
+    if not np.isclose(args_mass_unit, 1e10):
+        name += f"_{args_mass_unit}"
     return folder / name
 
 
@@ -108,6 +111,12 @@ if __name__ == "__main__":
         help="Linear solver to use. (scipy_sparse [default], pypardiso, fthm).",
     )
     parser.add_argument(
+        "--mass-unit",
+        type=float,
+        default=1e10,
+        help="Mass unit (1e10 [default]).",
+    )
+    parser.add_argument(
         "--num-fractures",
         type=int,
         default=6,
@@ -135,7 +144,7 @@ if __name__ == "__main__":
             "numerical": pp.NumericalConstants(**numerics_parameters),
         },
         # User-defined units
-        "units": pp.Units(kg=1e10, m=1, s=1, rad=1),
+        "units": pp.Units(kg=args.mass_unit, m=1, s=1, rad=1),
         # Numerics
         "solver_statistics_file_name": "solver_statistics.json",
         "export_constants_separately": False,
@@ -148,6 +157,7 @@ if __name__ == "__main__":
             args.linearization,
             args.relaxation,
             args.linear_solver,
+            args.mass_unit,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
