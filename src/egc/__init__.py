@@ -6,4 +6,4 @@ from .models.hydrostatic_pressure import (
 )
 from .models.lithostatic_pressure import BackgroundStress, LithostaticPressureBC
 
-from .newton_return_map import NewtonReturnMap
+from .numerics.newton_return_map import NewtonReturnMap
