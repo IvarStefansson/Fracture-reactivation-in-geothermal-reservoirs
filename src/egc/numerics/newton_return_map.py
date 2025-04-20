@@ -49,10 +49,7 @@ class NewtonReturnMap:
                 fracture_domains
             )
             t_t_eval = t_t.value(self.equation_system)
-            if self.nd == 3:
-                t_t_new = t_t_eval.reshape((-1, 2))
-            else:
-                t_t_new = t_t_eval
+            t_t_new = t_t_eval.reshape((-1, self.nd - 1))
 
             # Return map in tangential direction, using the newly obtained normal
             # tractions.
