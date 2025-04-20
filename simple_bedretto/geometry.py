@@ -5,7 +5,7 @@ import porepy as pp
 from porepy.applications.md_grids.model_geometries import CubeDomainOrthogonalFractures
 
 
-class BedrettoGeometry(CubeDomainOrthogonalFractures):
+class SimpleBedrettoTunnel_Geometry(CubeDomainOrthogonalFractures):
     def set_domain(self) -> None:
         """Set the cube domain."""
         bounding_box = {

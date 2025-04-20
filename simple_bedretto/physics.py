@@ -31,7 +31,7 @@ if False:
 
     injection_schedule = {
         "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
-        "pressure": [0, 0] + [3e7, 5e7, 10e7, 5e7, 5e7],
+        "overpressure": [0, 0] + [3e7, 5e7, 10e7, 5e7, 5e7],
         "reference_pressure": 1e7,
     }
 
@@ -47,7 +47,7 @@ else:
     # ! ---- MATERIAL PARAMETERS ----
 
     fluid_parameters: dict[str, float] = {
-        "compressibility": 0,  # 4.6e-10, # 25 deg C
+        "compressibility": 4.6e-10,  # 25 deg C
         "viscosity": 0.89e-3,  # 25 deg C
         "density": 998.2e0,
     }
@@ -55,10 +55,9 @@ else:
     # Values from Multi-disciplinary characterizations of the BedrettoLab
     solid_parameters: dict[str, float] = {
         # Guessed
-        "biot_coefficient": 1,  # guessed by Vaezi et al.
-        "normal_permeability": 4.35e-6 * pp.DARCY,  # guessed
-        "dilation_angle": 0.1,  # guessed
+        "dilation_angle": 0.0,  # guessed
         # Literature values
+        "biot_coefficient": 1,  # guessed by Vaezi et al.
         "permeability": 4.35e-6 * pp.DARCY,  # X.Ma et al.
         "residual_aperture": 1e-4,  # Computed from transmissivities (X. Ma et al.) and cubic law
         "porosity": 1.36e-2,  # X.Ma et al.
@@ -72,11 +71,131 @@ else:
         "fracture_tangential_stiffness": -1,  # Not used
     }
 
+    # Testing grounds
+    overpressure_initialization = [(pp.DAY, 0), (2 * pp.DAY, 0)]
+    offset = overpressure_initialization[-1][0]
+    overpressure_schedule = [
+        (pp.DAY, 3 * pp.MEGA),
+        (2 * pp.DAY, 5 * pp.MEGA),
+        (3 * pp.DAY, 10 * pp.MEGA),
+        (4 * pp.DAY, 5 * pp.MEGA),
+        (5 * pp.DAY, 5 * pp.MEGA),
+    ]
     injection_schedule = {
-        "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
-        "pressure": [0, 0] + [3e7, 5e7, 10e7, 5e7, 5e7],
-        "reference_pressure": 1e7,
+        "time": [t for t, _ in overpressure_initialization]
+        + [t + offset for t, _ in overpressure_schedule],
+        "overpressure": [p for _, p in overpressure_initialization]
+        + [p for _, p in overpressure_schedule],
+        "reference_pressure": 1 * pp.MEGA,
     }
+
+    # Inspired by Vaezi et al.
+    _overpressure_initialization = [
+        (0, 0),
+        (1 * pp.DAY, 0),
+        (2 * pp.DAY, 0),
+        (3 * pp.DAY, 0),
+        (4 * pp.DAY, 0),
+        (5 * pp.DAY, 0),
+    ]
+    _offset = _overpressure_initialization[-1][0]
+    _overpressure_schedule = [
+        (0.01 * pp.HOUR, 2 * pp.MEGA),
+        (0.2 * pp.HOUR, 2 * pp.MEGA),
+        (0.21 * pp.HOUR, 4 * pp.MEGA),
+        (0.4 * pp.HOUR, 4 * pp.MEGA),
+        (0.41 * pp.HOUR, 6 * pp.MEGA),
+        (0.6 * pp.HOUR, 6 * pp.MEGA),
+        (0.61 * pp.HOUR, 8 * pp.MEGA),
+        (0.8 * pp.HOUR, 8 * pp.MEGA),
+        (0.81 * pp.HOUR, 10 * pp.MEGA),
+        (1.0 * pp.HOUR, 10 * pp.MEGA),
+        (1.01 * pp.HOUR, 12 * pp.MEGA),
+        (1.2 * pp.HOUR, 12 * pp.MEGA),
+        (1.21 * pp.HOUR, 14 * pp.MEGA),
+        (1.4 * pp.HOUR, 14 * pp.MEGA),
+        (1.41 * pp.HOUR, 12 * pp.MEGA),
+        (1.6 * pp.HOUR, 12 * pp.MEGA),
+        (1.61 * pp.HOUR, 14 * pp.MEGA),
+        (1.8 * pp.HOUR, 14 * pp.MEGA),
+        (1.81 * pp.HOUR, 16 * pp.MEGA),
+        (2.0 * pp.HOUR, 16 * pp.MEGA),
+        (2.01 * pp.HOUR, 20 * pp.MEGA),
+        (2.2 * pp.HOUR, 20 * pp.MEGA),
+        (2.21 * pp.HOUR, 16 * pp.MEGA),
+        (2.4 * pp.HOUR, 8 * pp.MEGA),
+        (2.41 * pp.HOUR, 20 * pp.MEGA),
+        (2.6 * pp.HOUR, 20 * pp.MEGA),
+        (2.61 * pp.HOUR, 16 * pp.MEGA),
+        (2.8 * pp.HOUR, 10 * pp.MEGA),
+        (2.81 * pp.HOUR, 20 * pp.MEGA),
+        (3.0 * pp.HOUR, 20 * pp.MEGA),
+        (3.01 * pp.HOUR, 16 * pp.MEGA),
+        (3.2 * pp.HOUR, 11 * pp.MEGA),
+        (3.21 * pp.HOUR, 20 * pp.MEGA),
+        (3.4 * pp.HOUR, 20 * pp.MEGA),
+        (3.41 * pp.HOUR, 16 * pp.MEGA),
+        (3.6 * pp.HOUR, 12 * pp.MEGA),
+        (3.61 * pp.HOUR, 20 * pp.MEGA),
+        (3.8 * pp.HOUR, 20 * pp.MEGA),
+        (3.81 * pp.HOUR, 16 * pp.MEGA),
+        (4.0 * pp.HOUR, 12 * pp.MEGA),
+        (4.01 * pp.HOUR, 20 * pp.MEGA),
+        (4.2 * pp.HOUR, 20 * pp.MEGA),
+        (4.21 * pp.HOUR, 16 * pp.MEGA),
+        (4.4 * pp.HOUR, 12 * pp.MEGA),
+        (4.41 * pp.HOUR, 20 * pp.MEGA),
+        (4.6 * pp.HOUR, 20 * pp.MEGA),
+        (4.61 * pp.HOUR, 16 * pp.MEGA),
+        (4.8 * pp.HOUR, 12 * pp.MEGA),
+        (4.81 * pp.HOUR, 20 * pp.MEGA),
+        (5.0 * pp.HOUR, 20 * pp.MEGA),
+        (5.01 * pp.HOUR, 16 * pp.MEGA),
+        (5.2 * pp.HOUR, 12 * pp.MEGA),
+        (5.21 * pp.HOUR, 20 * pp.MEGA),
+        (5.4 * pp.HOUR, 20 * pp.MEGA),
+        (5.41 * pp.HOUR, 16 * pp.MEGA),
+        (5.6 * pp.HOUR, 12 * pp.MEGA),
+        (5.61 * pp.HOUR, 20 * pp.MEGA),
+        (5.8 * pp.HOUR, 20 * pp.MEGA),
+        (5.81 * pp.HOUR, 16 * pp.MEGA),
+        (6.0 * pp.HOUR, 12 * pp.MEGA),
+        (6.01 * pp.HOUR, 20 * pp.MEGA),
+        (6.2 * pp.HOUR, 20 * pp.MEGA),
+        (6.21 * pp.HOUR, 16 * pp.MEGA),
+        (6.4 * pp.HOUR, 12 * pp.MEGA),
+        (6.41 * pp.HOUR, 20 * pp.MEGA),
+        (6.6 * pp.HOUR, 20 * pp.MEGA),
+        (6.61 * pp.HOUR, 16 * pp.MEGA),
+        (6.8 * pp.HOUR, 12 * pp.MEGA),
+        (6.81 * pp.HOUR, 20 * pp.MEGA),
+        (7.0 * pp.HOUR, 20 * pp.MEGA),
+        (7.01 * pp.HOUR, 16 * pp.MEGA),
+        (7.2 * pp.HOUR, 12 * pp.MEGA),
+        (7.21 * pp.HOUR, 20 * pp.MEGA),
+        (7.4 * pp.HOUR, 20 * pp.MEGA),
+        (7.41 * pp.HOUR, 16 * pp.MEGA),
+        (7.6 * pp.HOUR, 12 * pp.MEGA),
+        (7.61 * pp.HOUR, 20 * pp.MEGA),
+        (7.8 * pp.HOUR, 20 * pp.MEGA),
+        (7.81 * pp.HOUR, 16 * pp.MEGA),
+        (8.0 * pp.HOUR, 12 * pp.MEGA),
+    ]
+    _injection_schedule = {
+        "time": [t for t, _ in _overpressure_initialization]
+        + [t + _offset for t, _ in _overpressure_schedule],
+        "overpressure": [p for _, p in _overpressure_initialization]
+        + [p for _, p in _overpressure_schedule],
+        "reference_pressure": 10 * pp.MEGA,
+    }
+    # import matplotlib.pyplot as plt
+    # plt.figure("pressure schedule")
+    # plt.plot((np.array(_injection_schedule["time"][6:]) -_offset) / 3600, np.array(_injection_schedule["overpressure"][6:]) / 1e6)
+    # plt.xlabel("time [hr]")
+    # plt.ylabel("over pressure [MPa]")
+    # plt.title("Injection schedule")
+    # plt.grid()
+    # plt.show()
 
     numerics_parameters: dict[str, float] = {
         "open_state_tolerance": 1e-10,  # Numerical method parameter
@@ -132,17 +251,17 @@ class PressureConstraintWell:
         super().update_time_dependent_ad_arrays()
 
         # Update injection pressure
-        current_injection_pressure = np.interp(
+        current_injection_overpressure = np.interp(
             self.time_manager.time,
             injection_schedule["time"],
-            injection_schedule["pressure"],
+            injection_schedule["overpressure"],
             left=0.0,
         )
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
-                name="current_injection_pressure",
+                name="current_injection_overpressure",
                 values=np.array(
-                    [self.units.convert_units(current_injection_pressure, "Pa")]
+                    [self.units.convert_units(current_injection_overpressure, "Pa")]
                 ),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
@@ -182,15 +301,15 @@ class PressureConstraintWell:
         indicator = np.concatenate(sd_indicator)
         reverse_indicator = 1 - indicator
 
-        current_injection_pressure = pp.ad.TimeDependentDenseArray(
-            "current_injection_pressure", [self.mdg.subdomains()[0]]
+        current_injection_overpressure = pp.ad.TimeDependentDenseArray(
+            "current_injection_overpressure", [self.mdg.subdomains()[0]]
         )
         hydrostatic_pressure = pp.ad.TimeDependentDenseArray(
             "hydrostatic_pressure", subdomains
         )
         constrained_eq = (
             self.pressure(subdomains)
-            - current_injection_pressure
+            - current_injection_overpressure
             - hydrostatic_pressure
         )
 
@@ -205,7 +324,7 @@ class PressureConstraintWell:
         return eq_with_pressure_constraint
 
 
-class Physics(
+class SimpleBedrettoTunnel_Physics(
     # egc.HydrostaticPressureInitialCondition,
     HorizontalBackgroundStress,
     egc.HydrostaticPressureBC,
@@ -216,5 +335,6 @@ class Physics(
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
+    # egc.LinearFluidCompressibility, # Replaces exponential law
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
