@@ -16,7 +16,6 @@ if False:
     solid_parameters: dict[str, float] = {
         "biot_coefficient": 1.0,
         "permeability": 1e-14,
-        "normal_permeability": 1e-14,
         "porosity": 1.0e-2,
         "shear_modulus": 1e14,
         "lame_lambda": 1e14,
@@ -214,6 +213,8 @@ class Physics(
     egc.HydrostaticPressureInitialization,
     PressureConstraintWell,
     pp.constitutive_laws.GravityForce,
+    egc.ScalarPermeability,
+    egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
