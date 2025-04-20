@@ -1,3 +1,5 @@
+"""Aim to replicate Vaezi et al. (2024)."""
+
 import numpy as np
 import porepy as pp
 import egc
@@ -5,31 +7,34 @@ import egc
 # ! ---- MATERIAL PARAMETERS ----
 
 fluid_parameters: dict[str, float] = {
-    "compressibility": 0,
-    "viscosity": 1e-3,
+    "compressibility": 4.6e-10,  # 25 deg C
+    "viscosity": 0.89e-3,  # 25 deg C
     "density": 998.2e0,
 }
 
+# Values from Multi-disciplinary characterizations of the BedrettoLab
 solid_parameters: dict[str, float] = {
-    "biot_coefficient": 1.0,
-    "permeability": 1e-14,
-    "porosity": 1.0e-2,
-    "shear_modulus": 1e14,
-    "lame_lambda": 1e14,
-    "residual_aperture": 1e-3,
-    "density": 2600,
+    # Guessed
+    "dilation_angle": 0.0,  # guessed - TODO increase with time values (20 deg Vaezi et al?)
+    "biot_coefficient": 1,  # Vaezi et al.
+    "permeability": 2.5e-18,  # Vaezi et al.
+    "residual_aperture": 2.25e-6,  # Vaezi et al.
+    "porosity": 0.005,  # Vaezi et al.
+    "shear_modulus": 16.8 * pp.GIGA,  # Vaezi et al
+    "lame_lambda": 47.78 * pp.GIGA,  # X.Ma et al.
+    "density": 2653,  # X.Ma et al.
+    "fracture_gap": 0e-3,  # Equals the maximum fracture closure.
+    "friction_coefficient": 0.6,  # X.Ma et al.
     "maximum_elastic_fracture_opening": 0e-3,  # Not used
     "fracture_normal_stiffness": 1e3,  # Not used
-    "fracture_tangential_stiffness": -1,
-    "fracture_gap": 0e-3,  # Equals the maximum fracture closure.
-    "dilation_angle": 0.1,
-    "friction_coefficient": 0.8,
+    "fracture_tangential_stiffness": -1,  # Not used
 }
 
 injection_schedule = {
     "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
-    "pressure": [0, 0] + [3e7, 5e7, 10e7, 5e7, 5e7],
-    "reference_pressure": 1e7,
+    "pressure": [0, 0]
+    + [3 * pp.MEGA, 5 * pp.MEGA, 10 * pp.MEGA, 5 * pp.MEGA, 5 * pp.MEGA],
+    "reference_pressure": 1 * pp.MEGA,
 }
 
 numerics_parameters: dict[str, float] = {
@@ -37,6 +42,7 @@ numerics_parameters: dict[str, float] = {
     "characteristic_contact_traction": injection_schedule["reference_pressure"],
     "contact_mechanics_scaling": 1.0,
 }
+
 
 class PressureConstraintWell:
     def update_time_dependent_ad_arrays(self) -> None:
