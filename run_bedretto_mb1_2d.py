@@ -6,64 +6,20 @@ import time
 from pathlib import Path
 
 import porepy as pp
-from bedretto_mb1_2d.geometry import BedrettoMB1_Geometry as BedrettoGeometry
 from bedretto_mb1_2d.physics import (
-    BedrettoMB1_Physics as Physics,
     solid_parameters,
     fluid_parameters,
     numerics_parameters,
 )
+from bedretto_mb1_2d.model import BedrettoMB1_Model
 from ncp import (
-    DarcysLawAd,
-    ReverseElasticModuli,
-    AuxiliaryContact,
-    FractureStates,
-    IterationExporting,
-    LebesgueConvergenceMetrics,
     AdvancedSolverStatistics,
-    LogPerformanceDataVectorial,
-    LinearRadialReturnTangentialContact,
-    NCPNormalContact,
-    NCPTangentialContact,
-    ScaledContact,
 )
-from common.newton_return_map import NewtonReturnMap
-from FTHM_Solver.hm_solver import IterativeHMSolver
-from porepy.numerics.nonlinear import line_search
-
+from egc import setup_model
 
 # Set logging level
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
-
-
-class NonlinearRadialReturnModel(
-    BedrettoGeometry,  # Geometry
-    AuxiliaryContact,  # Yield function, orthognality, and alignment
-    FractureStates,  # Physics based contact states for output only
-    IterationExporting,  # Tailored export
-    LebesgueConvergenceMetrics,  # Convergence metrics
-    LogPerformanceDataVectorial,  # Tailored convergence checks
-    ReverseElasticModuli,  # Characteristic displacement from traction
-    Physics,  # Basic model, BC and IC
-):
-    """Simple Bedretto model solved with Huebers nonlinear radial return formulation."""
-
-
-class LinearRadialReturnModel(
-    LinearRadialReturnTangentialContact, NonlinearRadialReturnModel
-):
-    """Simple Bedretto model solved with Alart linear radial return formulation."""
-
-
-class NCPModel(
-    ScaledContact,
-    NCPNormalContact,  # Normal contact model
-    NCPTangentialContact,  # Tangential contact model
-    NonlinearRadialReturnModel,
-):
-    """Simple Bedretto model solved with NCP formulation."""
-
 
 def generate_case_name(
     num_fractures, formulation, linearization, relaxation, linear_solver
@@ -170,122 +126,15 @@ if __name__ == "__main__":
     Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
     logger.info(f"\n\nRunning {model_params['folder_name']}")
 
-    # Define formulation
-    match args.formulation.lower():
-        case "rr-nonlinear":
-            Model = NonlinearRadialReturnModel
-
-        case "rr-linear":
-            Model = LinearRadialReturnModel
-
-        case "ncp-min":
-            model_params["ncp_type"] = "min"
-            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
-
-            Model = NCPModel
-
-        case "ncp-fb":
-            model_params["ncp_type"] = "fb"
-            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
-            Model = NCPModel
-
-        case "ncp-fb-partial":
-            model_params["ncp_type"] = "fb-partial"
-            model_params["stick_slip_regularization"] = "origin_and_stick_slip_transition"
-            Model = NCPModel
-
-        case _:
-            raise ValueError(f"formulation {args.formulation} not recognized.")
-
-    # Choose nonlinear solver (Newton with relaxation)
-    match args.linearization.lower():
-        case "picard":
-            ...
-
-        case "newton":
-
-            class Model(DarcysLawAd, Model):
-                """Enhance with AD of permeability."""
-
-        case _:
-            raise ValueError(f"AD mode {args.linearization} not recognized.")
-
-    # Choose relaxation method
-    match args.relaxation.lower():
-        case "none":
-            ...
-
-        case "linesearch":
-
-            class Model(
-                pp.models.solution_strategy.ContactIndicators,
-                Model,
-            ):
-                """Added contact indicators for line search."""
-
-            class ConstraintLineSearchNonlinearSolver(
-                line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
-                line_search.SplineInterpolationLineSearch,  # Technical implementation of
-                # the actual search along given update direction
-                line_search.LineSearchNewtonSolver,  # General line search.
-            ): ...
-
-            solver_params["nonlinear_solver"] = ConstraintLineSearchNonlinearSolver
-            solver_params["Global_line_search"] = (
-                0  # Set to 1 to use turn on a residual-based line search
-            )
-            solver_params["Local_line_search"] = (
-                1  # Set to 0 to use turn off the tailored line search
-            )
-            solver_params["adaptive_indicator_scaling"] = (
-                1  # Scale the indicator adaptively to increase robustness
-            )
-
-        case "return-map":
-
-            class Model(
-                NewtonReturnMap,
-                Model,
-            ):
-                """Add return map before each iteration."""
-
-        case _:
-            raise ValueError(f"Relaxation method {args.relaxation} not recognized.")
-
-    # Choose linear solver
-    match args.linear_solver.lower():
-        case "scipy_sparse":
-            # Use scipy sparse solver
-            model_params["linear_solver"] = "scipy_sparse"
-            solver_params["linear_solver"] = "scipy_sparse"
-        case "pypardiso":
-            # Use pypardiso solver
-            model_params["linear_solver"] = "pypardiso"
-            solver_params["linear_solver"] = "pypardiso"
-        case "fthm":
-
-            class Model(
-                IterativeHMSolver,
-                Model,
-            ): ...
-
-            model_params["linear_solver_config"] = {
-                # GMRES parameters
-                "ksp_atol": 1e-15,
-                "ksp_rtol": 1e-10,
-                "ksp_max_it": 90,
-                "ksp_gmres_restart": 90,
-                # Avaliable options for THM: CPR, SAMG, FGMRES (fastest to slowest).
-                # For HM, this parameter is ignored.
-                "solver": "CPR",
-                "ksp_monitor": True,  # Enable to see convergence messages from PETSc.
-                "logging": False,  # Does not work well with a progress bar.
-                "treat_singularity_contact": True,
-            }
-            solver_params["linear_solver_config"] = model_params["linear_solver_config"]
-
-        case _:
-            raise ValueError(f"Linear solver {args.linear_solver} not recognized.")
+    (Model, model_params, solver_params) = setup_model(
+        BedrettoMB1_Model,
+        model_params,
+        solver_params,
+        formulation=args.formulation,
+        linearization=args.linearization,
+        relaxation=args.relaxation,
+        linear_solver=args.linear_solver,
+    )
 
     # Run the model
     model = Model(model_params)
