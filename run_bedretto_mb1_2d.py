@@ -11,25 +11,42 @@ from bedretto_mb1_2d.physics import (
     fluid_parameters,
     numerics_parameters,
 )
-from bedretto_mb1_2d.model import BedrettoMB1_Model
+from bedretto_mb1_2d.physics import BedrettoMB1_Model
+from bedretto_mb1_2d.initialization import (
+    BedrettoMB1_Initialization_Model,
+    solid_parameters as solid_parameters_init,
+    fluid_parameters as fluid_parameters_init,
+    numerics_parameters as numerics_parameters_init,
+)
+
 from ncp import (
     AdvancedSolverStatistics,
 )
 from egc import setup_model
+from copy import deepcopy
 
 # Set logging level
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 def generate_case_name(
-    num_fractures, formulation, linearization, relaxation, linear_solver
+    num_fractures,
+    formulation,
+    linearization,
+    relaxation,
+    linear_solver,
+    initialization=False,
 ):
     folder = Path(f"bedretto_mb1_{num_fractures}")
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
     name += f"_{linear_solver.lower()}"
-    return folder / name
+    path = folder / name
+    if initialization:
+        path = path / "initialization"
+    return path
 
 
 if __name__ == "__main__":
@@ -80,7 +97,7 @@ if __name__ == "__main__":
         "cell_size_fracture": 500,  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
-            schedule=[0, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
+            schedule=[i * pp.DAY for i in range(6)],
             dt_init=pp.DAY,
             constant_dt=True,
         ),
@@ -97,7 +114,7 @@ if __name__ == "__main__":
         "export_constants_separately": False,
         "linear_solver": "scipy_sparse",
         "max_iterations": 200,  # Needed for export
-        "folder_name": Path("visualization")
+        "folder_name": Path("visualization-debug")
         / generate_case_name(
             args.num_fractures,
             args.formulation,
@@ -136,11 +153,56 @@ if __name__ == "__main__":
         linear_solver=args.linear_solver,
     )
 
-    # Run the model
+    # Initialization step
+    model_params_init = deepcopy(model_params)
+    model_params_init["material_constants"] = {
+        "solid": pp.SolidConstants(**solid_parameters_init),
+        "fluid": pp.FluidComponent(**fluid_parameters_init),
+        "numerical": pp.NumericalConstants(**numerics_parameters_init),
+    }
+    model_params_init["time_manager"] = pp.TimeManager(
+        schedule=[0, 2 * pp.DAY],
+        dt_init=pp.DAY,
+        constant_dt=True,
+    )
+    model_params_init["folder_name"] = Path("visualization-debug") / generate_case_name(
+        args.num_fractures,
+        args.formulation,
+        args.linearization,
+        args.relaxation,
+        args.linear_solver,
+        initialization=True,
+    )
+
+    (Model_Init, model_params_init, solver_params) = setup_model(
+        BedrettoMB1_Initialization_Model,
+        model_params_init,
+        solver_params,
+        formulation=args.formulation,
+        linearization=args.linearization,
+        relaxation=args.relaxation,
+        linear_solver=args.linear_solver,
+    )
+
+    model_init = Model_Init(model_params_init)
+    pp.run_time_dependent_model(
+        model_init,
+        solver_params,
+    )
+
+    # Initialize the model with the last values and run the actual model
+    model_params["initial_condition"] = model_init.equation_system.get_variable_values(time_step_index=0)
     model = Model(model_params)
+
+    # Fetch the last state of the initialization model and set it as the initial state
+    #model.prepare_simulation()
+    #solver_params["prepare_simulation"] = False
     pp.run_time_dependent_model(model, solver_params)
 
     # Simple statistics
+    logger.info(
+        f"\nTotal number of iterations: {model_init.nonlinear_solver_statistics.cache_num_iteration}"
+    )
     logger.info(
         f"\nTotal number of iterations: {model.nonlinear_solver_statistics.cache_num_iteration}"
     )
