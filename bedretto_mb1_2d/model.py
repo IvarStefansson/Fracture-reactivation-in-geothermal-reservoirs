@@ -32,4 +32,4 @@ class BedrettoMB1_Model(
     ReverseElasticModuli,  # Characteristic displacement from traction
     BedrettoMB1_Physics,  # Basic model, BC and IC
 ):
-    """Simple Bedretto model solved with Huebers nonlinear radial return formulation."""
+    ...
