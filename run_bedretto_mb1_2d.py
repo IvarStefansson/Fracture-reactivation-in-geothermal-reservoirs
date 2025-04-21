@@ -16,7 +16,7 @@ from bedretto_mb1_2d.physics import (
     solid_parameters_initialization,
     fluid_parameters_initialization,
     numerics_parameters_initialization,
-    injection_schedule_initialization
+    injection_schedule_initialization,
 )
 
 from ncp import (
@@ -190,13 +190,64 @@ if __name__ == "__main__":
         solver_params,
     )
 
-    # Initialize the model with the last values and run the actual model
-    model_params["initial_condition"] = model_init.equation_system.get_variable_values(time_step_index=0)
+    # (Pre-)Initialize the model to build a bijection between domains
     model = Model(model_params)
+    model.prepare_simulation_1()
+    solver_params["prepare_simulation_1"] = False
 
-    # Fetch the last state of the initialization model and set it as the initial state
-    #model.prepare_simulation()
-    #solver_params["prepare_simulation"] = False
+    # TODO provide standardized routine to build bijection between domains
+
+    # Build 1-1 map between domains
+    unique_domains_init = {
+        (domain.id, domain.dim, type(domain)): domain
+        for domain in model_init.mdg.subdomains()
+    }
+    unique_interfaces_init = {
+        (interface.id, interface.dim, type(interface)): interface
+        for interface in model_init.mdg.interfaces()
+    }
+    unique_domains_init = dict(
+        sorted(unique_domains_init.items(), key=lambda x: (x[0][0], x[0][1]))
+    )
+    unique_interfaces_init = dict(
+        sorted(unique_interfaces_init.items(), key=lambda x: (x[0][0], x[0][1]))
+    )
+
+    # Same for current model
+    unique_domains = {
+        (domain.id, domain.dim, type(domain)): domain
+        for domain in model.mdg.subdomains()
+    }
+    unique_interfaces = {
+        (interface.id, interface.dim, type(interface)): interface
+        for interface in model.mdg.interfaces()
+    }
+    unique_domains = dict(
+        sorted(unique_domains.items(), key=lambda x: (x[0][0], x[0][1]))
+    )
+    unique_interfaces = dict(
+        sorted(unique_interfaces.items(), key=lambda x: (x[0][0], x[0][1]))
+    )
+
+    # Build the domain bijection
+    domain_bijection = dict(
+        zip(
+            list(unique_domains_init.values()) + list(unique_interfaces_init.values()),
+            list(unique_domains.values()) + list(unique_interfaces.values()),
+        )
+    )
+
+    # Set the initial condition for the model
+    # model.params["initial_condition"] = model_init.equation_system.get_variable_values(iterate_index=0)
+    model.params["initial_condition"] = {
+        (
+            var.name,
+            domain_bijection[var.domain],
+        ): model_init.equation_system.get_variable_values([var], iterate_index=0)
+        for var in model_init.equation_system.variables
+        # if var.name not in ["u", "u_interface"]
+    }
+
     pp.run_time_dependent_model(model, solver_params)
 
     # Simple statistics
