@@ -1,4 +1,4 @@
-from .models.initial_condition import InitialCondition
+from .models.initial_condition import InitialCondition, InitialConditionFromParameters
 
 from .models.hydrostatic_pressure import (
     HydrostaticPressureBC,

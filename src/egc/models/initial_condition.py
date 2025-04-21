@@ -2,8 +2,8 @@ import porepy as pp
 import numpy as np
 from typing import Optional
 
+
 class InitialCondition:
-    
     """Initial conditions:
 
     * Zero displacement.
@@ -24,13 +24,11 @@ class InitialCondition:
                     values, [var], iterate_index=0, time_step_index=0
                 )
 
-    def initial_pressure(self, subdomains: Optional[list[pp.Grid]]=None):
+    def initial_pressure(self, subdomains: Optional[list[pp.Grid]] = None):
         if subdomains is None:
-            return 0.
+            return 0.0
         else:
-            return np.concatenate(
-                [np.zeros(sd.num_cells) for sd in subdomains]
-            )
+            return np.concatenate([np.zeros(sd.num_cells) for sd in subdomains])
 
     def initial_displacement(self, sd=None):
         # Want to actually solve a mechanics problem alone with glued fractures.
@@ -54,3 +52,32 @@ class InitialCondition:
         traction_vals = np.zeros((self.nd, sd.num_cells))
         return traction_vals.ravel("F")
 
+
+class InitialConditionFromParameters:
+    """Utility to set initial conditions from parameters dictionary.
+
+    Requires "initial_condition" key in the parameters dictionary. Enables
+    setting initial conditions for all variables at once, or specific
+    variables.
+
+    """
+
+    def initial_condition(self) -> None:
+        """Set the initial condition for the problem."""
+        super().initial_condition()
+
+        if "initial_condition" in self.params and isinstance(
+            self.params["initial_condition"], dict
+        ):
+            for var in self.equation_system.variables:
+                if var.name in self.params["initial_condition"]:
+                    values = self.params["initial_condition"][var.name][var.domain]
+                    self.equation_system.set_variable_values(
+                        values, [var], iterate_index=0, time_step_index=0
+                    )
+        elif "initial_condition" in self.params and isinstance(
+            self.params["initial_condition"], np.ndarray
+        ):
+            values = self.params["initial_condition"]
+            self.equation_system.set_variable_values(values, iterate_index=0)
+            self.equation_system.set_variable_values(values, time_step_index=0)
