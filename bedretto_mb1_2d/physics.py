@@ -1,8 +1,30 @@
-"""Aim to replicate Vaezi et al. (2024)."""
+"""Runable PorePy models of the two-dimensional fracture stimulation
+experiments inspired by the work:
+
+Vaezi et al (2024), "Numerical modeling of hydraulic stimulation of
+fractured crystalline rock at the bedretto underground laboratory
+for geosciences and geoenergies", International Journal of Rock Mechanics
+and Mining Sciences, 176, 105689.
+
+The geometry is adapted from the figures provided in the paper. The model
+is resolves fractures explicitly and models fracture deformation through
+Coulomb friction and classical contact mechanics, in constrast to (visco-)
+elastic modeling of embeddings, cf. Vaezi et al (2024).
+
+"""
 
 import numpy as np
 import porepy as pp
 import egc
+from .geometry import BedrettoMB1_Geometry
+from ncp import (
+    ReverseElasticModuli,
+    AuxiliaryContact,
+    FractureStates,
+    IterationExporting,
+    LebesgueConvergenceMetrics,
+    LogPerformanceDataVectorial,
+)
 
 # ! ---- MATERIAL PARAMETERS ----
 
@@ -31,9 +53,8 @@ solid_parameters: dict[str, float] = {
 }
 
 injection_schedule = {
-    "time": [pp.DAY, 2 * pp.DAY] + [(3 + i) * pp.DAY for i in range(5)],
-    "pressure": [0, 0]
-    + [3 * pp.MEGA, 5 * pp.MEGA, 10 * pp.MEGA, 5 * pp.MEGA, 5 * pp.MEGA],
+    "time": [i * pp.DAY for i in range(6)],
+    "pressure": [0, 3 * pp.MEGA, 5 * pp.MEGA, 10 * pp.MEGA, 5 * pp.MEGA, 5 * pp.MEGA],
     "reference_pressure": 1 * pp.MEGA,
 }
 
@@ -75,6 +96,7 @@ class PressureConstraintWell:
         # Pick the only subdomain
         fracture_sds = [sd for sd in subdomains if sd.dim == self.nd - 1]
 
+        # Leave equation unmodified if no fractures present
         if len(fracture_sds) == 0:
             return std_eq
 
@@ -124,7 +146,7 @@ class PressureConstraintWell:
 
 
 class BedrettoMB1_Physics(
-    egc.HydrostaticPressureInitialCondition,
+    egc.InitialConditionFromParameters,
     egc.BackgroundStress,
     egc.HydrostaticPressureBC,
     egc.LithostaticPressureBC,
@@ -136,3 +158,16 @@ class BedrettoMB1_Physics(
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
+
+
+class BedrettoMB1_Model(
+    BedrettoMB1_Geometry,  # Geometry
+    AuxiliaryContact,  # Yield function, orthognality, and alignment
+    FractureStates,  # Physics based contact states for output only
+    IterationExporting,  # Tailored export
+    LebesgueConvergenceMetrics,  # Convergence metrics
+    LogPerformanceDataVectorial,  # Tailored convergence checks
+    ReverseElasticModuli,  # Characteristic displacement from traction
+    BedrettoMB1_Physics,  # Basic model, BC and IC
+):
+    ...
