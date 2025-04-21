@@ -25,6 +25,7 @@ from ncp import (
     LebesgueConvergenceMetrics,
     LogPerformanceDataVectorial,
 )
+from copy import deepcopy
 
 # ! ---- MATERIAL PARAMETERS ----
 
@@ -171,3 +172,21 @@ class BedrettoMB1_Model(
     BedrettoMB1_Physics,  # Basic model, BC and IC
 ):
     ...
+
+# Add simplified model and parameters for initialization
+fluid_parameters_initialization = deepcopy(fluid_parameters)
+solid_parameters_initialization = deepcopy(solid_parameters)
+numerics_parameters_initialization = deepcopy(numerics_parameters)
+solid_parameters_initialization["dilation_angle"] = 0.0
+
+injection_schedule_initialization = {
+    "time": [0 * pp.DAY, 2 * pp.DAY],
+    "pressure": [0, 0],
+    "reference_pressure": 1 * pp.MEGA,
+}
+
+
+class BedrettoMB1_Model_Initialization(
+    egc.HydrostaticPressureInitialCondition,
+    BedrettoMB1_Model,
+): ...

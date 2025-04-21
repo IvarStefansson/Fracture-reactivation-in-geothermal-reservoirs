@@ -7,16 +7,16 @@ from pathlib import Path
 
 import porepy as pp
 from bedretto_mb1_2d.physics import (
+    BedrettoMB1_Model,
     solid_parameters,
     fluid_parameters,
     numerics_parameters,
-)
-from bedretto_mb1_2d.physics import BedrettoMB1_Model
-from bedretto_mb1_2d.initialization import (
-    BedrettoMB1_Initialization_Model,
-    solid_parameters as solid_parameters_init,
-    fluid_parameters as fluid_parameters_init,
-    numerics_parameters as numerics_parameters_init,
+    injection_schedule,
+    BedrettoMB1_Model_Initialization,
+    solid_parameters_initialization,
+    fluid_parameters_initialization,
+    numerics_parameters_initialization,
+    injection_schedule_initialization
 )
 
 from ncp import (
@@ -97,7 +97,7 @@ if __name__ == "__main__":
         "cell_size_fracture": 500,  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
-            schedule=[i * pp.DAY for i in range(6)],
+            schedule=injection_schedule["time"],
             dt_init=pp.DAY,
             constant_dt=True,
         ),
@@ -114,7 +114,7 @@ if __name__ == "__main__":
         "export_constants_separately": False,
         "linear_solver": "scipy_sparse",
         "max_iterations": 200,  # Needed for export
-        "folder_name": Path("visualization-debug")
+        "folder_name": Path("visualization")
         / generate_case_name(
             args.num_fractures,
             args.formulation,
@@ -156,16 +156,16 @@ if __name__ == "__main__":
     # Initialization step
     model_params_init = deepcopy(model_params)
     model_params_init["material_constants"] = {
-        "solid": pp.SolidConstants(**solid_parameters_init),
-        "fluid": pp.FluidComponent(**fluid_parameters_init),
-        "numerical": pp.NumericalConstants(**numerics_parameters_init),
+        "solid": pp.SolidConstants(**solid_parameters_initialization),
+        "fluid": pp.FluidComponent(**fluid_parameters_initialization),
+        "numerical": pp.NumericalConstants(**numerics_parameters_initialization),
     }
     model_params_init["time_manager"] = pp.TimeManager(
-        schedule=[0, 2 * pp.DAY],
+        schedule=injection_schedule_initialization["time"],
         dt_init=pp.DAY,
         constant_dt=True,
     )
-    model_params_init["folder_name"] = Path("visualization-debug") / generate_case_name(
+    model_params_init["folder_name"] = Path("visualization") / generate_case_name(
         args.num_fractures,
         args.formulation,
         args.linearization,
@@ -175,7 +175,7 @@ if __name__ == "__main__":
     )
 
     (Model_Init, model_params_init, solver_params) = setup_model(
-        BedrettoMB1_Initialization_Model,
+        BedrettoMB1_Model_Initialization,
         model_params_init,
         solver_params,
         formulation=args.formulation,
