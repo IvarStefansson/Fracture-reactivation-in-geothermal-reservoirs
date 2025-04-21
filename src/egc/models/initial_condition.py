@@ -63,21 +63,37 @@ class InitialConditionFromParameters:
     """
 
     def initial_condition(self) -> None:
-        """Set the initial condition for the problem."""
+        """Set the initial condition for the problem.
+
+        Allow for setting initial conditions for specific variables or all at once.
+        If "initial_condition" is a dictionary, it should contain variable names
+        as keys and their corresponding values as values. If it is a numpy array,
+        it should contain the full initial condition for all variables.
+
+        """
         super().initial_condition()
 
         if "initial_condition" in self.params and isinstance(
             self.params["initial_condition"], dict
         ):
-            for var in self.equation_system.variables:
-                if var.name in self.params["initial_condition"]:
-                    values = self.params["initial_condition"][var.name][var.domain]
-                    self.equation_system.set_variable_values(
-                        values, [var], iterate_index=0, time_step_index=0
-                    )
+            # Option for setting initial conditions for specific variables
+
+            for (var_name, var_domain), value in self.params[
+                "initial_condition"
+            ].items():
+                pp.set_solution_values(
+                    name=var_name,
+                    values=value,
+                    data=self.equation_system._get_data(var_domain),
+                    iterate_index=0,
+                    time_step_index=0,
+                )
+
         elif "initial_condition" in self.params and isinstance(
             self.params["initial_condition"], np.ndarray
         ):
-            values = self.params["initial_condition"]
-            self.equation_system.set_variable_values(values, iterate_index=0)
-            self.equation_system.set_variable_values(values, time_step_index=0)
+            # Option for setting the full initial condition at once
+            value = self.params["initial_condition"]
+            self.equation_system.set_variable_values(
+                value, iterate_index=0, time_step_index=0
+            )
