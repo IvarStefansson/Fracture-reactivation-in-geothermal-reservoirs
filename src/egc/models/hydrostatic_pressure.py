@@ -11,6 +11,20 @@ class HydrostaticPressureBC:
     is_well: Callable[[pp.Grid], bool]
     fluid: pp.FluidComponent
 
+    def update_time_dependent_ad_arrays(self) -> None:
+        """Set hydrostatic pressure for current gravity."""
+        super().update_time_dependent_ad_arrays()
+
+        # Update injection pressure
+        for sd in self.mdg.subdomains(return_data=False):
+            hydrostatic_pressure = self.hydrostatic_pressure(sd)
+            pp.set_solution_values(
+                name="hydrostatic_pressure",
+                values=np.array(hydrostatic_pressure),
+                data=self.mdg.subdomain_data(sd),
+                iterate_index=0,
+            )
+
     def _fluid_pressure_boundary_faces(self, sd: pp.Grid) -> np.ndarray:
         """Auxiliary method to identify all Dirichlet/pressure boundaries."""
         if sd.dim == self.nd:
@@ -71,14 +85,6 @@ class HydrostaticPressureInitialization:
 
         # Update injection pressure
         for sd in self.mdg.subdomains(return_data=False):
-            hydrostatic_pressure = self.hydrostatic_pressure(sd)
-            pp.set_solution_values(
-                name="hydrostatic_pressure",
-                values=np.array(hydrostatic_pressure),
-                data=self.mdg.subdomain_data(sd),
-                iterate_index=0,
-            )
-
             
             pp.set_solution_values(
                 name="pressure_constraint_indicator",

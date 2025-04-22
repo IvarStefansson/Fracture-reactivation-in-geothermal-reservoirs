@@ -14,6 +14,8 @@ from .models.normal_permeability import (
     NormalPermeabilityFromLowerDimension
 )
 
+from .models.background_deformation import BackgroundDeformation
+
 from .models.linear_compressibility import LinearFluidCompressibility
 
 from .numerics.newton_return_map import NewtonReturnMap
