@@ -82,7 +82,10 @@ class NewtonReturnMap:
             # operators. These are stored as the children (this was the simplest way
             # to get the Ad parsing machinery to collaborate).
             tangential_basis = self.tangential_component(fracture_domains)
-            tangential_restriction = tangential_basis.children
+            if self.nd == 3:
+                tangential_restriction = tangential_basis.children
+            else:
+                tangential_restriction = [tangential_basis]
 
             # To get the transpose, we fetch the slicer of each child and take its
             # transpose. This should leave tangential_prolongation as a list of
@@ -90,7 +93,10 @@ class NewtonReturnMap:
             # traction.
             tangential_prolongation = [e._slicer.T for e in tangential_restriction]
             for ind, e_i in enumerate(tangential_prolongation):
-                t_eval_new += e_i @ t_t_new[:, ind]
+                if self.nd == 3:
+                    t_eval_new += e_i @ t_t_new[:, ind]
+                else:
+                    t_eval_new += e_i @ t_t_new
 
             # Update traction values after having performed the return map.
             self.equation_system.set_variable_values(
