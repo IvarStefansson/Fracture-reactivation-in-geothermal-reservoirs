@@ -63,19 +63,11 @@ class NewtonReturnMap:
             # relaxation.
             trust_radius = 1.0 * friction_bound
 
-            # To avoid numerical issues, we set the tangential traction explicitly
-            # to zero if the normal traction is zero. This follows the same principle
-            # as in the definition of the tangential fracture deformation equation.
-            char_closed = friction_bound > self.numerical.open_state_tolerance
-            t_t_new[char_closed] = (
-                np.minimum(
-                    1.0,
-                    trust_radius[char_closed]
-                    / np.linalg.norm(t_t_new[char_closed], axis=1),
-                ).reshape((-1, 1))
-                * t_t_new[char_closed]
-            )
-            t_t_new[~char_closed] = 0.0
+            for i, (bound, t_t) in enumerate(zip(trust_radius, t_t_new)):
+                if np.linalg.norm(t_t) > bound:
+                    # Tangential traction exceeds trust radius,
+                    # project back to the boundary.
+                    t_t_new[i] = bound * t_t / np.linalg.norm(t_t)
 
             # Put tangential tractions in the right positions of the global traction
             # array. The tangential projection is essentially a list of Ad projection
@@ -93,10 +85,7 @@ class NewtonReturnMap:
             # traction.
             tangential_prolongation = [e._slicer.T for e in tangential_restriction]
             for ind, e_i in enumerate(tangential_prolongation):
-                if self.nd == 3:
-                    t_eval_new += e_i @ t_t_new[:, ind]
-                else:
-                    t_eval_new += e_i @ t_t_new
+                t_eval_new += e_i @ t_t_new[:, ind]
 
             # Update traction values after having performed the return map.
             self.equation_system.set_variable_values(
