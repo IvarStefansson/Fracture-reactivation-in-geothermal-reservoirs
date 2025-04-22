@@ -65,6 +65,26 @@ numerics_parameters: dict[str, float] = {
     "contact_mechanics_scaling": 1.0,
 }
 
+class HorizontalBackgroundStress(egc.BackgroundStress):
+    def horizontal_background_stress(self, grid: pp.Grid) -> np.ndarray:
+        """Horizontal background stress
+
+        Values are based on the following paper:
+        Hetrich et al. (2021) "Characterization, hydraulic stimulation, and fluid
+        circulation experiments in the Bedretto Underground Laboratory for
+        Geosciences and Geoenergies", ARMA 21-1895
+
+        Assume homogeneous stress field for fixed depth. With increasing depth
+        both the lithostatic and horizontal stress increase with the same factor.
+
+        """
+        principal_background_stress_max_factor = (
+            18.2 / 21.8
+        )  # use sigmax vs sigmaz values in paper
+
+        s_v = self.vertical_background_stress(grid)
+        s_h = principal_background_stress_max_factor * s_v * np.ones((self.nd - 1, self.nd - 1, grid.num_cells))
+        return s_h
 
 class PressureConstraintWell:
     def update_time_dependent_ad_arrays(self) -> None:
@@ -146,30 +166,37 @@ class PressureConstraintWell:
         return eq_with_pressure_constraint
 
 
-class BedrettoMB1_Physics(
-    egc.InitialConditionFromParameters,
-    egc.BackgroundStress,
-    egc.HydrostaticPressureBC,
-    egc.LithostaticPressureBC,
-    egc.HydrostaticPressureInitialization,
-    PressureConstraintWell,
-    pp.constitutive_laws.GravityForce,
-    egc.ScalarPermeability,
-    egc.NormalPermeabilityFromHigherDimension,
-    pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
+class BasePhysics(
+    pp.constitutive_laws.GravityForce, # Activate gravity
+    egc.HydrostaticPressureBC, # Hydrostatic pressure BC
+    HorizontalBackgroundStress,
+    egc.LithostaticPressureBC, # Stress BC in vertical direction
+    egc.ScalarPermeability, # Utility function for deducting normal permeability
+    egc.NormalPermeabilityFromHigherDimension, # Deducting normal permeability
+    ReverseElasticModuli,  # Characteristic displacement from traction
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
 
-
-class BedrettoMB1_Model(
+class BaseModel(
     BedrettoMB1_Geometry,  # Geometry
     AuxiliaryContact,  # Yield function, orthognality, and alignment
     FractureStates,  # Physics based contact states for output only
     IterationExporting,  # Tailored export
     LebesgueConvergenceMetrics,  # Convergence metrics
     LogPerformanceDataVectorial,  # Tailored convergence checks
-    ReverseElasticModuli,  # Characteristic displacement from traction
-    BedrettoMB1_Physics,  # Basic model, BC and IC
+):
+    ...
+
+class BedrettoMB1_Model(
+    egc.InitialConditionFromParameters, # Initial condition from initialization
+    #egc.HydrostaticPressureInitialization, # Fixation of hydrostatic pressure and problem decoupling at first time step - allow mechanics problem to settle
+    egc.BackgroundDeformation, # Background stress from intialization
+    PressureConstraintWell, # Injection
+    egc.TwoPartedPrepareSimulation, # Split prepare simulation into two parts
+    BaseModel,
+    # Additional physics
+    pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
+    BasePhysics,
 ):
     ...
 
@@ -177,16 +204,30 @@ class BedrettoMB1_Model(
 fluid_parameters_initialization = deepcopy(fluid_parameters)
 solid_parameters_initialization = deepcopy(solid_parameters)
 numerics_parameters_initialization = deepcopy(numerics_parameters)
+
+# Deactivate physics which is of less relevance for initialization
+fluid_parameters_initialization["compressibility"] = 0.0
 solid_parameters_initialization["dilation_angle"] = 0.0
 
 injection_schedule_initialization = {
-    "time": [0 * pp.DAY, 2 * pp.DAY],
+    "time": [0 * pp.DAY, 10 * pp.DAY],
     "pressure": [0, 0],
     "reference_pressure": 1 * pp.MEGA,
 }
 
+# TODO remove cubic law
+# TODO make porosity constant and deactivate compressibility / remove time dependence in flow
+#class BedrettoMB1_Model_Initialization(
+#    #egc.HydrostaticPressureInitialCondition, # Cell-wise hydrostatic pressure as initial condition
+#    #egc.HydrostaticPressureInitialization, # Fixation of hydrostatic pressure and problem decoupling at first time step - allow mechanics problem to settle
+#    pp.constitutive_laws.ConstantPorosity,
+#    BaseModel,
+#): ...
 
 class BedrettoMB1_Model_Initialization(
-    egc.HydrostaticPressureInitialCondition,
-    BedrettoMB1_Model,
+    egc.HydrostaticPressureInitialCondition, # Cell-wise hydrostatic pressure as initial condition
+    BaseModel,
+    # Additional physics
+    pp.constitutive_laws.ConstantPorosity,
+    BasePhysics,
 ): ...
