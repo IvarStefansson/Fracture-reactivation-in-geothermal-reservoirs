@@ -226,6 +226,7 @@ injection_schedule_initialization = {
 
 class BedrettoMB1_Model_Initialization(
     egc.HydrostaticPressureInitialCondition, # Cell-wise hydrostatic pressure as initial condition
+    egc.HydrostaticPressureInitialization, # Fixation of hydrostatic pressure and problem decoupling at first time step - allow mechanics problem to settle
     BaseModel,
     # Additional physics
     pp.constitutive_laws.ConstantPorosity,
