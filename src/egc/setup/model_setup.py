@@ -117,11 +117,6 @@ def setup_model(BaseModel, model_params: dict,
                 Model,
             ):
                 """Add return map before each iteration."""
-            class Model_Init(
-                NewtonReturnMap,
-                Model_Init,
-            ):
-                """Add return map before each iteration."""
 
         case _:
             raise ValueError(f"Relaxation method {relaxation} not recognized.")
