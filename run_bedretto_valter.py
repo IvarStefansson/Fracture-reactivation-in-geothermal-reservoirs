@@ -21,8 +21,12 @@ from bedretto_valter.model import BedrettoValterModel
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
 
+
 def generate_case_name(
-    formulation, linearization, relaxation, linear_solver,
+    formulation,
+    linearization,
+    relaxation,
+    linear_solver,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
@@ -63,6 +67,9 @@ if __name__ == "__main__":
         default="scipy_sparse",
         help="Linear solver to use. (scipy_sparse [default], pypardiso, fthm).",
     )
+    parser.add_argument(
+        "--output", type=str, default="visualization", help="Output folder."
+    )
     args = parser.parse_args()
 
     # Model parameters
@@ -74,11 +81,13 @@ if __name__ == "__main__":
         # Time
         "time_manager": pp.TimeManager(
             schedule=[0] + injection_schedule["time"],
-            #dt_init=pp.DAY, # TODO reduce? or allow Days in the start, but reduce to 0.01 hour later?
-            #constant_dt=True, # TODO False
-            dt_init=pp.DAY, # TODO reduce? or allow Days in the start, but reduce to 0.01 hour later?
-            dt_min_max = (0.005 * pp.HOUR, pp.DAY),
-            constant_dt=False, # TODO False
+            dt_init=0.125
+            * pp.DAY,  # TODO reduce? or allow Days in the start, but reduce to 0.01 hour later?
+            dt_min_max=(20 * pp.SECOND, pp.DAY),  # TODO reduce dt_min
+            constant_dt=False,
+            print_info=True,
+            iter_optimal_range=(10, 20),
+            iter_max=100,
         ),
         # Material
         "material_constants": {
@@ -87,13 +96,12 @@ if __name__ == "__main__":
             "numerical": pp.NumericalConstants(**numerics_parameters),
         },
         # User-defined units
-        "units": pp.Units(kg=42e9, m=1, s=1, rad=1), # Young's modulus
+        "units": pp.Units(kg=42e9, m=1, s=1, rad=1),  # Young's modulus
         # Numerics
         "solver_statistics_file_name": "solver_statistics.json",
-        "export_constants_separately": False,
-        "linear_solver": "scipy_sparse",
+        "linear_solver": "pypardiso",
         "max_iterations": 200,  # Needed for export
-        "folder_name": Path("visualization")
+        "folder_name": Path(args.output)
         / generate_case_name(
             args.formulation,
             args.linearization,
@@ -105,7 +113,7 @@ if __name__ == "__main__":
 
     # Solver parameters
     solver_params = {
-        "nonlinear_solver": AANewtonSolver, #pp.NewtonSolver,
+        "nonlinear_solver": AANewtonSolver,  # pp.NewtonSolver,
         "max_iterations": 200,
         "nl_convergence_tol": 1e-6,
         "nl_convergence_tol_rel": 1e-6,
@@ -130,7 +138,7 @@ if __name__ == "__main__":
         args.relaxation,
         args.linear_solver,
     )
-    
+
     # Run the model
     model = Model(model_params)
     pp.run_time_dependent_model(model, solver_params)
