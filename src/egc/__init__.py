@@ -1,5 +1,7 @@
 from .models.initial_condition import InitialCondition, InitialConditionFromParameters
 
+from .models.equilibrium import EquilibriumSinglePhaseFlow
+
 from .models.hydrostatic_pressure import (
     HydrostaticPressureBC,
     HydrostaticPressureInitialCondition,
