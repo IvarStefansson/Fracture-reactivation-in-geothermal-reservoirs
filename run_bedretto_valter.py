@@ -27,11 +27,13 @@ def generate_case_name(
     linearization,
     relaxation,
     linear_solver,
+    mesh_refinement,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
+    name += f"_mesh{mesh_refinement}"
     name += f"_{linear_solver.lower()}"
     return folder / name
 
@@ -68,16 +70,34 @@ if __name__ == "__main__":
         help="Linear solver to use. (scipy_sparse [default], pypardiso, fthm).",
     )
     parser.add_argument(
+        "--mesh-refinement",
+        type=int,
+        default=0,
+        help="Mesh refinement level (0 [default], 1, 2).",
+    )
+    parser.add_argument(
         "--output", type=str, default="visualization", help="Output folder."
     )
     args = parser.parse_args()
+
+    # Mesh refinement
+    cell_size = {
+        0: 100,
+        1: 100,
+        2: 100,
+    }
+    cell_size_fracture = {
+        0: 50,
+        1: 10,
+        2: 1,
+    }
 
     # Model parameters
     model_params = {
         # Geometry
         "gmsh_file_name": "msh/gmsh_frac_file_valter.msh",
-        "cell_size": 500,  # Size of the cells in the mesh
-        "cell_size_fracture": 50,  # Size of the cells in the fractures
+        "cell_size": cell_size[args.mesh_refinement],  # Size of the cells in the mesh
+        "cell_size_fracture": cell_size_fracture[args.mesh_refinement],  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
             schedule=[0] + injection_schedule["time"],
@@ -107,6 +127,7 @@ if __name__ == "__main__":
             args.linearization,
             args.relaxation,
             args.linear_solver,
+            args.mesh_refinement,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
