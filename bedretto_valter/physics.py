@@ -1,13 +1,14 @@
 import numpy as np
 import porepy as pp
 import egc
+from icecream import ic
 
-# Based on publications on BedrettoLab - a much harder problem
+# Based on publications on BedrettoLab
 
 # ! ---- MATERIAL PARAMETERS ----
 
 fluid_parameters: dict[str, float] = {
-    "compressibility": 4.6e-10,  # 25 deg C
+    "compressibility": 0,  # 4.6e-10,  # 25 deg C # TODO increase
     "viscosity": 0.89e-3,  # 25 deg C
     "density": 998.2e0,
 }
@@ -15,152 +16,156 @@ fluid_parameters: dict[str, float] = {
 # Values from Multi-disciplinary characterizations of the BedrettoLab
 solid_parameters: dict[str, float] = {
     # Guessed
-    "dilation_angle": 0.0,  # guessed
+    "dilation_angle": 0.0,  # guessed # TODO
     # Literature values
     "biot_coefficient": 1,  # guessed by Vaezi et al.
     "permeability": 4.35e-6 * pp.DARCY,  # X.Ma et al.
+    "normal_permeability": 4.35e-6 * pp.DARCY,  # X.Ma et al. # TODO - not used at the moment
     "residual_aperture": 1e-4,  # Computed from transmissivities (X. Ma et al.) and cubic law
     "porosity": 1.36e-2,  # X.Ma et al.
-    "shear_modulus": 16.8e9,  # X.Ma et al.
-    "lame_lambda": 60.5e9 - 2 / 3 * 16.8e9,  # X.Ma et al.
+    "shear_modulus": 16.8 * pp.GIGA,  # X.Ma et al.
+    "lame_lambda": 19.73 * pp.GIGA,  # X.Ma et al.
     "density": 2653,  # X.Ma et al.
-    "fracture_gap": 0e-3,  # Equals the maximum fracture closure.
     "friction_coefficient": 0.6,  # X.Ma et al.
-    "maximum_elastic_fracture_opening": 0e-3,  # Not used
-    "fracture_normal_stiffness": 1e3,  # Not used
-    "fracture_tangential_stiffness": -1,  # Not used
 }
+# fracture_permeability = 1e-8 / 12
+# intersection_permeability = 1e-8 / 12
 
 # Testing grounds
-overpressure_initialization = [(pp.DAY, 0), (2 * pp.DAY, 0)]
-offset = overpressure_initialization[-1][0]
-overpressure_schedule = [
-    (pp.DAY, 3 * pp.MEGA),
-    (2 * pp.DAY, 5 * pp.MEGA),
-    (3 * pp.DAY, 10 * pp.MEGA),
-    (4 * pp.DAY, 5 * pp.MEGA),
-    (5 * pp.DAY, 5 * pp.MEGA),
-]
-injection_schedule = {
-    "time": [t for t, _ in overpressure_initialization]
-    + [t + offset for t, _ in overpressure_schedule],
-    "overpressure": [p for _, p in overpressure_initialization]
-    + [p for _, p in overpressure_schedule],
-    "reference_pressure": 1 * pp.MEGA,
-}
-
-# Inspired by Vaezi et al.
-_overpressure_initialization = [
-    (0, 0),
-    (1 * pp.DAY, 0),
-    (2 * pp.DAY, 0),
-    (3 * pp.DAY, 0),
-    (4 * pp.DAY, 0),
-    (5 * pp.DAY, 0),
-]
-_offset = _overpressure_initialization[-1][0]
-_overpressure_schedule = [
-    (0.01 * pp.HOUR, 2 * pp.MEGA),
-    (0.2 * pp.HOUR, 2 * pp.MEGA),
-    (0.21 * pp.HOUR, 4 * pp.MEGA),
-    (0.4 * pp.HOUR, 4 * pp.MEGA),
-    (0.41 * pp.HOUR, 6 * pp.MEGA),
-    (0.6 * pp.HOUR, 6 * pp.MEGA),
-    (0.61 * pp.HOUR, 8 * pp.MEGA),
-    (0.8 * pp.HOUR, 8 * pp.MEGA),
-    (0.81 * pp.HOUR, 10 * pp.MEGA),
-    (1.0 * pp.HOUR, 10 * pp.MEGA),
-    (1.01 * pp.HOUR, 12 * pp.MEGA),
-    (1.2 * pp.HOUR, 12 * pp.MEGA),
-    (1.21 * pp.HOUR, 14 * pp.MEGA),
-    (1.4 * pp.HOUR, 14 * pp.MEGA),
-    (1.41 * pp.HOUR, 12 * pp.MEGA),
-    (1.6 * pp.HOUR, 12 * pp.MEGA),
-    (1.61 * pp.HOUR, 14 * pp.MEGA),
-    (1.8 * pp.HOUR, 14 * pp.MEGA),
-    (1.81 * pp.HOUR, 16 * pp.MEGA),
-    (2.0 * pp.HOUR, 16 * pp.MEGA),
-    (2.01 * pp.HOUR, 20 * pp.MEGA),
-    (2.2 * pp.HOUR, 20 * pp.MEGA),
-    (2.21 * pp.HOUR, 16 * pp.MEGA),
-    (2.4 * pp.HOUR, 8 * pp.MEGA),
-    (2.41 * pp.HOUR, 20 * pp.MEGA),
-    (2.6 * pp.HOUR, 20 * pp.MEGA),
-    (2.61 * pp.HOUR, 16 * pp.MEGA),
-    (2.8 * pp.HOUR, 10 * pp.MEGA),
-    (2.81 * pp.HOUR, 20 * pp.MEGA),
-    (3.0 * pp.HOUR, 20 * pp.MEGA),
-    (3.01 * pp.HOUR, 16 * pp.MEGA),
-    (3.2 * pp.HOUR, 11 * pp.MEGA),
-    (3.21 * pp.HOUR, 20 * pp.MEGA),
-    (3.4 * pp.HOUR, 20 * pp.MEGA),
-    (3.41 * pp.HOUR, 16 * pp.MEGA),
-    (3.6 * pp.HOUR, 12 * pp.MEGA),
-    (3.61 * pp.HOUR, 20 * pp.MEGA),
-    (3.8 * pp.HOUR, 20 * pp.MEGA),
-    (3.81 * pp.HOUR, 16 * pp.MEGA),
-    (4.0 * pp.HOUR, 12 * pp.MEGA),
-    (4.01 * pp.HOUR, 20 * pp.MEGA),
-    (4.2 * pp.HOUR, 20 * pp.MEGA),
-    (4.21 * pp.HOUR, 16 * pp.MEGA),
-    (4.4 * pp.HOUR, 12 * pp.MEGA),
-    (4.41 * pp.HOUR, 20 * pp.MEGA),
-    (4.6 * pp.HOUR, 20 * pp.MEGA),
-    (4.61 * pp.HOUR, 16 * pp.MEGA),
-    (4.8 * pp.HOUR, 12 * pp.MEGA),
-    (4.81 * pp.HOUR, 20 * pp.MEGA),
-    (5.0 * pp.HOUR, 20 * pp.MEGA),
-    (5.01 * pp.HOUR, 16 * pp.MEGA),
-    (5.2 * pp.HOUR, 12 * pp.MEGA),
-    (5.21 * pp.HOUR, 20 * pp.MEGA),
-    (5.4 * pp.HOUR, 20 * pp.MEGA),
-    (5.41 * pp.HOUR, 16 * pp.MEGA),
-    (5.6 * pp.HOUR, 12 * pp.MEGA),
-    (5.61 * pp.HOUR, 20 * pp.MEGA),
-    (5.8 * pp.HOUR, 20 * pp.MEGA),
-    (5.81 * pp.HOUR, 16 * pp.MEGA),
-    (6.0 * pp.HOUR, 12 * pp.MEGA),
-    (6.01 * pp.HOUR, 20 * pp.MEGA),
-    (6.2 * pp.HOUR, 20 * pp.MEGA),
-    (6.21 * pp.HOUR, 16 * pp.MEGA),
-    (6.4 * pp.HOUR, 12 * pp.MEGA),
-    (6.41 * pp.HOUR, 20 * pp.MEGA),
-    (6.6 * pp.HOUR, 20 * pp.MEGA),
-    (6.61 * pp.HOUR, 16 * pp.MEGA),
-    (6.8 * pp.HOUR, 12 * pp.MEGA),
-    (6.81 * pp.HOUR, 20 * pp.MEGA),
-    (7.0 * pp.HOUR, 20 * pp.MEGA),
-    (7.01 * pp.HOUR, 16 * pp.MEGA),
-    (7.2 * pp.HOUR, 12 * pp.MEGA),
-    (7.21 * pp.HOUR, 20 * pp.MEGA),
-    (7.4 * pp.HOUR, 20 * pp.MEGA),
-    (7.41 * pp.HOUR, 16 * pp.MEGA),
-    (7.6 * pp.HOUR, 12 * pp.MEGA),
-    (7.61 * pp.HOUR, 20 * pp.MEGA),
-    (7.8 * pp.HOUR, 20 * pp.MEGA),
-    (7.81 * pp.HOUR, 16 * pp.MEGA),
-    (8.0 * pp.HOUR, 12 * pp.MEGA),
-]
-_injection_schedule = {
-    "time": [t for t, _ in _overpressure_initialization]
-    + [t + _offset for t, _ in _overpressure_schedule],
-    "overpressure": [p for _, p in _overpressure_initialization]
-    + [p for _, p in _overpressure_schedule],
-    "reference_pressure": 10 * pp.MEGA,
-}
-# import matplotlib.pyplot as plt
-# plt.figure("pressure schedule")
-# plt.plot((np.array(_injection_schedule["time"][6:]) -_offset) / 3600, np.array(_injection_schedule["overpressure"][6:]) / 1e6)
-# plt.xlabel("time [hr]")
-# plt.ylabel("over pressure [MPa]")
-# plt.title("Injection schedule")
-# plt.grid()
-# plt.show()
+if False:
+    overpressure_initialization = [(pp.DAY, 0), (2 * pp.DAY, 0)]
+    offset = overpressure_initialization[-1][0]
+    overpressure_schedule = [
+        (pp.DAY, 3 * pp.MEGA),
+        (2 * pp.DAY, 5 * pp.MEGA),
+        (3 * pp.DAY, 10 * pp.MEGA),
+        (4 * pp.DAY, 5 * pp.MEGA),
+        (5 * pp.DAY, 5 * pp.MEGA),
+    ]
+    injection_schedule = {
+        "time": [t for t, _ in overpressure_initialization]
+        + [t + offset for t, _ in overpressure_schedule],
+        "overpressure": [p for _, p in overpressure_initialization]
+        + [p for _, p in overpressure_schedule],
+        "reference_pressure": 3 * pp.MEGA,
+    }
+else:
+    # Inspired by Vaezi et al.
+    overpressure_initialization = [(i * pp.DAY, 0) for i in [0.25, 0.5, 0.75, 1]]
+    offset = overpressure_initialization[-1][0]
+    overpressure_schedule = [
+        (0.01 * pp.HOUR, 2 * pp.MEGA),
+        (0.2 * pp.HOUR, 2 * pp.MEGA),
+        (0.21 * pp.HOUR, 4 * pp.MEGA),
+        (0.4 * pp.HOUR, 4 * pp.MEGA),
+        (0.41 * pp.HOUR, 6 * pp.MEGA),
+        (0.6 * pp.HOUR, 6 * pp.MEGA),
+        (0.61 * pp.HOUR, 8 * pp.MEGA),
+        (0.8 * pp.HOUR, 8 * pp.MEGA),
+        (0.81 * pp.HOUR, 10 * pp.MEGA),
+        (1.0 * pp.HOUR, 10 * pp.MEGA),
+        (1.01 * pp.HOUR, 12 * pp.MEGA),
+        (1.2 * pp.HOUR, 12 * pp.MEGA),
+        (1.21 * pp.HOUR, 14 * pp.MEGA),
+        (1.4 * pp.HOUR, 14 * pp.MEGA),
+        (1.41 * pp.HOUR, 12 * pp.MEGA),
+        (1.6 * pp.HOUR, 12 * pp.MEGA),
+        (1.61 * pp.HOUR, 14 * pp.MEGA),
+        (1.8 * pp.HOUR, 14 * pp.MEGA),
+        (1.81 * pp.HOUR, 16 * pp.MEGA),
+        (2.0 * pp.HOUR, 16 * pp.MEGA),
+        (2.01 * pp.HOUR, 20 * pp.MEGA),
+        (2.2 * pp.HOUR, 20 * pp.MEGA),
+        (2.21 * pp.HOUR, 16 * pp.MEGA),
+        (2.4 * pp.HOUR, 8 * pp.MEGA),
+        (2.41 * pp.HOUR, 20 * pp.MEGA),
+        (2.6 * pp.HOUR, 20 * pp.MEGA),
+        (2.61 * pp.HOUR, 16 * pp.MEGA),
+        (2.8 * pp.HOUR, 10 * pp.MEGA),
+        (2.81 * pp.HOUR, 20 * pp.MEGA),
+        (3.0 * pp.HOUR, 20 * pp.MEGA),
+        (3.01 * pp.HOUR, 16 * pp.MEGA),
+        (3.2 * pp.HOUR, 11 * pp.MEGA),
+        (3.21 * pp.HOUR, 20 * pp.MEGA),
+        (3.4 * pp.HOUR, 20 * pp.MEGA),
+        (3.41 * pp.HOUR, 16 * pp.MEGA),
+        (3.6 * pp.HOUR, 12 * pp.MEGA),
+        (3.61 * pp.HOUR, 20 * pp.MEGA),
+        (3.8 * pp.HOUR, 20 * pp.MEGA),
+        (3.81 * pp.HOUR, 16 * pp.MEGA),
+        (4.0 * pp.HOUR, 12 * pp.MEGA),
+        (4.01 * pp.HOUR, 20 * pp.MEGA),
+        (4.2 * pp.HOUR, 20 * pp.MEGA),
+        (4.21 * pp.HOUR, 16 * pp.MEGA),
+        (4.4 * pp.HOUR, 12 * pp.MEGA),
+        (4.41 * pp.HOUR, 20 * pp.MEGA),
+        (4.6 * pp.HOUR, 20 * pp.MEGA),
+        (4.61 * pp.HOUR, 16 * pp.MEGA),
+        (4.8 * pp.HOUR, 12 * pp.MEGA),
+        (4.81 * pp.HOUR, 20 * pp.MEGA),
+        (5.0 * pp.HOUR, 20 * pp.MEGA),
+        (5.01 * pp.HOUR, 16 * pp.MEGA),
+        (5.2 * pp.HOUR, 12 * pp.MEGA),
+        (5.21 * pp.HOUR, 20 * pp.MEGA),
+        (5.4 * pp.HOUR, 20 * pp.MEGA),
+        (5.41 * pp.HOUR, 16 * pp.MEGA),
+        (5.6 * pp.HOUR, 12 * pp.MEGA),
+        (5.61 * pp.HOUR, 20 * pp.MEGA),
+        (5.8 * pp.HOUR, 20 * pp.MEGA),
+        (5.81 * pp.HOUR, 16 * pp.MEGA),
+        (6.0 * pp.HOUR, 12 * pp.MEGA),
+        (6.01 * pp.HOUR, 20 * pp.MEGA),
+        (6.2 * pp.HOUR, 20 * pp.MEGA),
+        (6.21 * pp.HOUR, 16 * pp.MEGA),
+        (6.4 * pp.HOUR, 12 * pp.MEGA),
+        (6.41 * pp.HOUR, 20 * pp.MEGA),
+        (6.6 * pp.HOUR, 20 * pp.MEGA),
+        (6.61 * pp.HOUR, 16 * pp.MEGA),
+        (6.8 * pp.HOUR, 12 * pp.MEGA),
+        (6.81 * pp.HOUR, 20 * pp.MEGA),
+        (7.0 * pp.HOUR, 20 * pp.MEGA),
+        (7.01 * pp.HOUR, 16 * pp.MEGA),
+        (7.2 * pp.HOUR, 12 * pp.MEGA),
+        (7.21 * pp.HOUR, 20 * pp.MEGA),
+        (7.4 * pp.HOUR, 20 * pp.MEGA),
+        (7.41 * pp.HOUR, 16 * pp.MEGA),
+        (7.6 * pp.HOUR, 12 * pp.MEGA),
+        (7.61 * pp.HOUR, 20 * pp.MEGA),
+        (7.8 * pp.HOUR, 20 * pp.MEGA),
+        (7.81 * pp.HOUR, 16 * pp.MEGA),
+        (8.0 * pp.HOUR, 12 * pp.MEGA),
+    ]
+    injection_schedule = {
+        "time": [t for t, _ in overpressure_initialization]
+        + [t + offset for t, _ in overpressure_schedule],
+        "overpressure": [p for _, p in overpressure_initialization]
+        + [p for _, p in overpressure_schedule],
+        "reference_pressure": 10 * pp.MEGA,
+    }
+    # import matplotlib.pyplot as plt
+    # plt.figure("pressure schedule")
+    # plt.plot((np.array(_injection_schedule["time"][6:]) -_offset) / 3600, np.array(_injection_schedule["overpressure"][6:]) / 1e6)
+    # plt.xlabel("time [hr]")
+    # plt.ylabel("over pressure [MPa]")
+    # plt.title("Injection schedule")
+    # plt.grid()
+    # plt.show()
 
 numerics_parameters: dict[str, float] = {
     "open_state_tolerance": 1e-10,  # Numerical method parameter
     "characteristic_contact_traction": injection_schedule["reference_pressure"],
 }
+
+
+class PorePressure:
+    """Generalize the hydrostatic pressure, X. Ma et al."""
+
+    def hydrostatic_pressure(self, sd: pp.Grid) -> np.ndarray:
+        p_m1000 = self.units.convert_units(2.0 * pp.MEGA, "Pa")  # minus 1000 m
+        z = sd.cell_centers[self.nd - 1]
+        slope = self.units.convert_units((5.6 - 2.0) * pp.MEGA / 300.0, "Pa*m^-1")
+        pressure = p_m1000 - slope * (z - self.units.convert_units(-1000, "m"))
+        return pressure
 
 
 class HorizontalBackgroundStress(egc.BackgroundStress):
@@ -205,6 +210,8 @@ class HorizontalBackgroundStress(egc.BackgroundStress):
 
 
 class PressureConstraintWell:
+    """Pressurize specific fractures in their center."""
+
     def update_time_dependent_ad_arrays(self) -> None:
         """Set current injection pressure."""
         super().update_time_dependent_ad_arrays()
@@ -216,6 +223,7 @@ class PressureConstraintWell:
             injection_schedule["overpressure"],
             left=0.0,
         )
+        ic(self.time_manager.time - pp.DAY, current_injection_overpressure)
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
                 name="current_injection_overpressure",
@@ -239,21 +247,18 @@ class PressureConstraintWell:
             return std_eq
 
         # Pick a single fracture
-        well_sd = fracture_sds[7]
+        pressurized_interval = [fracture_sds[i] for i in self.pressurized_fractures]
+        injection_coord = dict(
+            zip(pressurized_interval,
+            self.units.convert_units(self.fracture_centers, "m"))
+        )
 
         for i, sd in enumerate(subdomains):
-            if sd == well_sd:
-                # Pick the center (hardcoded)
-                well_loc = np.array(
-                    [
-                        self.units.convert_units(0, "m"),
-                        self.units.convert_units(0, "m"),
-                        self.units.convert_units(-150, "m"),
-                    ]
-                ).reshape((3, 1))
+            if sd in pressurized_interval:
 
+                well_loc = injection_coord[sd]
+                print(well_loc)
                 well_loc_ind = sd.closest_cell(well_loc)
-
                 sd_indicator[i][well_loc_ind] = 1
 
         # Characteristic functions
@@ -283,17 +288,39 @@ class PressureConstraintWell:
         return eq_with_pressure_constraint
 
 
+class CustomFracturePermeability(
+    pp.models.constitutive_laws.DimensionDependentPermeability
+):
+    def fracture_permeability(self, subdomains):
+        # fracture_permeability = self.params["fracture_permeability"]
+        size = sum(sd.num_cells for sd in subdomains)
+        permeability = pp.wrap_as_dense_ad_array(
+            fracture_permeability, size, name="fracture permeability"
+        )
+        return self.isotropic_second_order_tensor(subdomains, permeability)
+
+    def intersection_permeability(self, subdomains):
+        # intersection_permeability = self.params["intersection_permeability"]
+        size = sum(sd.num_cells for sd in subdomains)
+        permeability = pp.wrap_as_dense_ad_array(
+            intersection_permeability, size, name="intersection permeability"
+        )
+        return self.isotropic_second_order_tensor(subdomains, permeability)
+
+
 class BedrettoValter_Physics(
-    # egc.HydrostaticPressureInitialCondition,
+    #egc.HydrostaticPressureInitialCondition,
+    PorePressure,
     HorizontalBackgroundStress,
     egc.HydrostaticPressureBC,
     egc.LithostaticPressureBC,
     egc.HydrostaticPressureInitialization,
+    #egc.EquilibriumStateInitialization,
     PressureConstraintWell,
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
-    # egc.LinearFluidCompressibility, # Replaces exponential law
+    # CustomFracturePermeability,
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
