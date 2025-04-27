@@ -60,6 +60,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             )
         ]
         pressurized_14 = len(interval_14) * [False]
+        center_14 = [
+            self.cb1(90)
+        ]
 
         # Interval 13
         interval_13 = [
@@ -75,6 +78,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_13 = len(interval_13) * [False]
+        center_13 = [
+            self.cb1(110)
+        ]
 
         # Interval 12
         interval_12 = [
@@ -111,6 +117,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             # ),
         ]
         pressurized_12 = len(interval_12) * [False]
+        center_12 = [
+#            self.cb1(131),
+#            self.cb1(133),
+#            self.cb1(135),
+        ]
 
         # Interval 11
         interval_11 = [
@@ -126,6 +137,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_11 = len(interval_11) * [False]
+        center_11 = [
+            self.cb1(140)
+        ]
 
         # Interval 10
         interval_10 = [
@@ -141,6 +155,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_10 = len(interval_10) * [False]
+        center_10 = [self.cb1(165)]
 
         # Interval 9
         # TODO many more?
@@ -157,6 +172,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_9 = len(interval_9) * [True]
+        center_9 = [
+            self.cb1(185)
+        ]
 
         # Interval 8
         interval_8 = [
@@ -172,6 +190,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_8 = len(interval_8) * [False]
+        center_8 = [
+            self.cb1(208)
+        ]
 
         # Interval 7
         interval_7 = [
@@ -197,6 +218,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             # ),
         ]
         pressurized_7 = len(interval_7) * [False]
+        center_7 = [
+            self.cb1(219)
+        ]
 
         self._fractures = (
             interval_14
@@ -208,6 +232,16 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             + interval_8
             + interval_7
         )
+        mask_pressurized = (
+            pressurized_14
+            + pressurized_13
+            + pressurized_12
+            + pressurized_11
+            + pressurized_10
+            + pressurized_9
+            + pressurized_8
+            + pressurized_7
+        )
         self.pressurized_fractures = np.where(
             pressurized_14
             + pressurized_13
@@ -218,3 +252,13 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             + pressurized_8
             + pressurized_7
         )[0]
+        self.fracture_centers = np.array(
+            center_14
+            + center_13
+            + center_12
+            + center_11
+            + center_10
+            + center_9
+            + center_8
+            + center_7
+        )[np.array(mask_pressurized, dtype=bool)]
