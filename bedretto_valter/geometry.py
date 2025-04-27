@@ -22,8 +22,8 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             "xmax": self.units.convert_units(500, "m"),
             "ymin": self.units.convert_units(-500, "m"),
             "ymax": self.units.convert_units(500, "m"),
-            "zmin": self.units.convert_units(-2000, "m"),
-            "zmax": self.units.convert_units(-1000, "m"),
+            "zmin": self.units.convert_units(-1500, "m"),
+            "zmax": self.units.convert_units(-500, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
