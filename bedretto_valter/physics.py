@@ -160,7 +160,6 @@ _injection_schedule = {
 numerics_parameters: dict[str, float] = {
     "open_state_tolerance": 1e-10,  # Numerical method parameter
     "characteristic_contact_traction": injection_schedule["reference_pressure"],
-    "contact_mechanics_scaling": 1.0,
 }
 
 
