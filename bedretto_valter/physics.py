@@ -341,6 +341,9 @@ class SimpleTPFAFlow:
             Operator representing the Darcy flux equation on the interfaces.
 
         """
+        if not self.params.get("use_simple_flow", False):
+            return super().interface_darcy_flux_equation(interfaces)
+
         subdomains = self.interfaces_to_subdomains(interfaces)
 
         projection = pp.ad.MortarProjections(self.mdg, subdomains, interfaces, dim=1)
@@ -382,8 +385,8 @@ class BedrettoValter_Physics(
     egc.LithostaticPressureBC,
     PressureConstraintWell,
     # egc.HydrostaticPressureInitialization,
-    # egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
-    egc.AlternatingDecoupling,  # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
+    egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
+    # egc.AlternatingDecoupling,  # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,

@@ -28,6 +28,7 @@ def generate_case_name(
     relaxation,
     linear_solver,
     mesh_refinement,
+    simple_flow,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
@@ -35,6 +36,8 @@ def generate_case_name(
         name += f"_{relaxation.lower()}"
     name += f"_mesh{mesh_refinement}"
     name += f"_{linear_solver.lower()}"
+    if simple_flow:
+        name += "_simple_flow"
     return folder / name
 
 
@@ -76,6 +79,16 @@ if __name__ == "__main__":
         help="Mesh refinement level (0 [default], 1, 2).",
     )
     parser.add_argument(
+        "--simple_flow",
+        action="store_true",
+        help="If provided, simple flow laws are used",
+    )
+    parser.add_argument(
+        "--decoupling",
+        action="store_true",
+        help="If provided, alernating decoupling is used",
+    )
+    parser.add_argument(
         "--output", type=str, default="visualization", help="Output folder."
     )
     args = parser.parse_args()
@@ -96,6 +109,8 @@ if __name__ == "__main__":
 
     # Model parameters
     model_params = {
+        # Numerical modeling/linearization
+        "use_simple_flow": args.simple_flow,
         # Geometry
         "gmsh_file_name": "msh/gmsh_frac_file_valter.msh",
         "cell_size": cell_size[args.mesh_refinement],  # Size of the cells in the mesh
@@ -129,6 +144,7 @@ if __name__ == "__main__":
             args.relaxation,
             args.linear_solver,
             args.mesh_refinement,
+            args.simple_flow,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
@@ -160,6 +176,9 @@ if __name__ == "__main__":
         args.relaxation,
         args.linear_solver,
     )
+
+    if args.decoupling:
+        class Model(egc.AlternatingDecoupling, Model): ...
 
     # Run the model
     model = Model(model_params)
