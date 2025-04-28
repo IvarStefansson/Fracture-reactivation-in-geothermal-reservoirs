@@ -307,7 +307,7 @@ class PressureConstraintWell:
 #         return self.isotropic_second_order_tensor(subdomains, permeability)
 
 
-class SimpleTPFAFlow:
+class TPFAFlow:
     """Simplified Flow discretization:
 
     * TPFA for flow.
@@ -315,17 +315,29 @@ class SimpleTPFAFlow:
 
     """
 
-    # def darcy_flux_discretization(self, subdomains: list[pp.Grid]) -> pp.ad.MpfaAd:
-    #    """Discretization object for the Darcy flux term.
+    def darcy_flux_discretization(self, subdomains: list[pp.Grid]) -> pp.ad.MpfaAd:
+        """Discretization object for the Darcy flux term.
 
-    #    Parameters:
-    #        subdomains: List of subdomains where the Darcy flux is defined.
+        Parameters:
+            subdomains: List of subdomains where the Darcy flux is defined.
 
-    #    Returns:
-    #        Discretization of the Darcy flux.
+        Returns:
+            Discretization of the Darcy flux.
 
-    #    """
-    #    return pp.ad.TpfaAd(self.darcy_keyword, subdomains)
+        """
+        if not self.params.get("use_tpfa_flow", False):
+            return super().darcy_flux_discretization(subdomains)
+        else:
+            return pp.ad.TpfaAd(self.darcy_keyword, subdomains)
+
+
+class SimpleFlow:
+    """Simplified Flow discretization:
+
+    * TPFA for flow.
+    * Constant aperture in the normal flow.
+
+    """
 
     def interface_darcy_flux_equation(
         self, interfaces: list[pp.MortarGrid]
@@ -392,6 +404,7 @@ class BedrettoValter_Physics(
     egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
     # CustomFracturePermeability,
-    SimpleTPFAFlow,
+    TPFAFlow,
+    SimpleFlow,
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
