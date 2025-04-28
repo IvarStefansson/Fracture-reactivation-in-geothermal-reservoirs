@@ -249,13 +249,14 @@ class PressureConstraintWell:
         # Pick a single fracture
         pressurized_interval = [fracture_sds[i] for i in self.pressurized_fractures]
         injection_coord = dict(
-            zip(pressurized_interval,
-            self.units.convert_units(self.fracture_centers, "m"))
+            zip(
+                pressurized_interval,
+                self.units.convert_units(self.fracture_centers, "m"),
+            )
         )
 
         for i, sd in enumerate(subdomains):
             if sd in pressurized_interval:
-
                 well_loc = injection_coord[sd]
                 print(well_loc)
                 well_loc_ind = sd.closest_cell(well_loc)
@@ -263,7 +264,7 @@ class PressureConstraintWell:
 
         # Characteristic functions
         indicator = np.concatenate(sd_indicator)
-        reverse_indicator = 1 - indicator
+        reverse_indicator = 1.0 - indicator
 
         current_injection_overpressure = pp.ad.TimeDependentDenseArray(
             "current_injection_overpressure", [self.mdg.subdomains()[0]]
@@ -281,31 +282,96 @@ class PressureConstraintWell:
             pp.ad.DenseArray(reverse_indicator) * std_eq
             + pp.ad.DenseArray(indicator) * constrained_eq
         )
-        eq_with_pressure_constraint.set_name(
-            "mass_balance_equation_with_constrained_pressure"
-        )
+        eq_with_pressure_constraint.set_name(std_eq.name)
 
         return eq_with_pressure_constraint
 
 
-class CustomFracturePermeability(
-    pp.models.constitutive_laws.DimensionDependentPermeability
-):
-    def fracture_permeability(self, subdomains):
-        # fracture_permeability = self.params["fracture_permeability"]
-        size = sum(sd.num_cells for sd in subdomains)
-        permeability = pp.wrap_as_dense_ad_array(
-            fracture_permeability, size, name="fracture permeability"
-        )
-        return self.isotropic_second_order_tensor(subdomains, permeability)
+# class CustomFracturePermeability(
+#     pp.models.constitutive_laws.DimensionDependentPermeability
+# ):
+#     def fracture_permeability(self, subdomains):
+#         # fracture_permeability = self.params["fracture_permeability"]
+#         size = sum(sd.num_cells for sd in subdomains)
+#         permeability = pp.wrap_as_dense_ad_array(
+#             fracture_permeability, size, name="fracture permeability"
+#         )
+#         return self.isotropic_second_order_tensor(subdomains, permeability)
+#
+#     def intersection_permeability(self, subdomains):
+#         # intersection_permeability = self.params["intersection_permeability"]
+#         size = sum(sd.num_cells for sd in subdomains)
+#         permeability = pp.wrap_as_dense_ad_array(
+#             intersection_permeability, size, name="intersection permeability"
+#         )
+#         return self.isotropic_second_order_tensor(subdomains, permeability)
 
-    def intersection_permeability(self, subdomains):
-        # intersection_permeability = self.params["intersection_permeability"]
-        size = sum(sd.num_cells for sd in subdomains)
-        permeability = pp.wrap_as_dense_ad_array(
-            intersection_permeability, size, name="intersection permeability"
+
+class SimpleTPFAFlow:
+    """Simplified Flow discretization:
+
+    * TPFA for flow.
+    * Constant aperture in the normal flow.
+
+    """
+
+    # def darcy_flux_discretization(self, subdomains: list[pp.Grid]) -> pp.ad.MpfaAd:
+    #    """Discretization object for the Darcy flux term.
+
+    #    Parameters:
+    #        subdomains: List of subdomains where the Darcy flux is defined.
+
+    #    Returns:
+    #        Discretization of the Darcy flux.
+
+    #    """
+    #    return pp.ad.TpfaAd(self.darcy_keyword, subdomains)
+
+    def interface_darcy_flux_equation(
+        self, interfaces: list[pp.MortarGrid]
+    ) -> pp.ad.Operator:
+        """Darcy flux on interfaces.
+
+        The units of the Darcy flux are [m^2 Pa / s], see note in :meth:`darcy_flux`.
+
+        Parameters:
+            interfaces: List of interface grids.
+
+        Returns:
+            Operator representing the Darcy flux equation on the interfaces.
+
+        """
+        subdomains = self.interfaces_to_subdomains(interfaces)
+
+        projection = pp.ad.MortarProjections(self.mdg, subdomains, interfaces, dim=1)
+
+        # Gradient operator in the normal direction. The collapsed distance is
+        # :math:`\frac{a}{2}` on either side of the fracture.
+        # We assume here that :meth:`aperture` is implemented to give a meaningful value
+        # also for subdomains of co-dimension > 1.
+        normal_gradient = pp.ad.Scalar(2) * (
+            projection.secondary_to_mortar_avg()
+            @ self.aperture(subdomains).previous_iteration() ** pp.ad.Scalar(-1)
         )
-        return self.isotropic_second_order_tensor(subdomains, permeability)
+        normal_gradient.set_name("normal_gradient")
+
+        # Project the two pressures to the interface and multiply with the normal
+        # diffusivity.
+        pressure_l = projection.secondary_to_mortar_avg() @ self.pressure(subdomains)
+        pressure_h = projection.primary_to_mortar_avg() @ self.pressure_trace(
+            subdomains
+        )
+        eq = self.interface_darcy_flux(interfaces) - self.volume_integral(
+            self.normal_permeability(interfaces)
+            * (
+                normal_gradient * (pressure_h - pressure_l)
+                + self.interface_vector_source_darcy_flux(interfaces)
+            ),
+            interfaces,
+            1,
+        )
+        eq.set_name("interface_darcy_flux_equation")
+        return eq
 
 
 class BedrettoValter_Physics(
