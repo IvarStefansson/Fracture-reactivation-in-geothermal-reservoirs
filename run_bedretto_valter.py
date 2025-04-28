@@ -29,6 +29,7 @@ def generate_case_name(
     linear_solver,
     mesh_refinement,
     simple_flow,
+    tpfa_flow,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
@@ -38,6 +39,8 @@ def generate_case_name(
     name += f"_{linear_solver.lower()}"
     if simple_flow:
         name += "_simple_flow"
+    if tpfa_flow:
+        name += "_tpfa_flow"
     return folder / name
 
 
@@ -84,6 +87,11 @@ if __name__ == "__main__":
         help="If provided, simple flow laws are used",
     )
     parser.add_argument(
+        "--tpfa_flow",
+        action="store_true",
+        help="If provided, simple flow laws are used",
+    )
+    parser.add_argument(
         "--decoupling",
         action="store_true",
         help="If provided, alernating decoupling is used",
@@ -111,6 +119,7 @@ if __name__ == "__main__":
     model_params = {
         # Numerical modeling/linearization
         "use_simple_flow": args.simple_flow,
+        "use_tpfa_flow": args.tpfa_flow,
         # Geometry
         "gmsh_file_name": "msh/gmsh_frac_file_valter.msh",
         "cell_size": cell_size[args.mesh_refinement],  # Size of the cells in the mesh
@@ -145,6 +154,7 @@ if __name__ == "__main__":
             args.linear_solver,
             args.mesh_refinement,
             args.simple_flow,
+            args.tpfa_flow,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
