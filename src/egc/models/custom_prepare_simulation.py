@@ -2,8 +2,25 @@
 
 
 class TwoPartedPrepareSimulation:
+    """Customized prepare_simulation method for the model.
+
+    Purpose: Split into setup of geometry, equation system, and variables
+    (prepare_simulation_1) and setup of discretization, linear solver, and
+    nonlinear discretization (prepare_simulation_2). This allows to access
+    the grid and thus assign e.g. TimeDepenedentAdArrays to the grid
+    before the discretization is set up.
+
+    """
+
+    # def prepare_simulation(self) -> None:
+    #    """Run at the start of simulation. Used for initialization etc."""
+    #    if self.params.get("prepare_simulation_1", True):
+    #        self.prepare_simulation_1()
+    #    if self.params.get("prepare_simulation_2", True):
+    #        self.prepare_simulation_2()
+
     def prepare_simulation_1(self) -> None:
-        """Run at the start of simulation. Used for initialization etc."""
+        """Part 1 of prepare_simulation."""
         # Set the material and geometry of the problem. The geometry method must be
         # implemented in a ModelGeometry class.
         self.set_materials()
@@ -19,7 +36,7 @@ class TwoPartedPrepareSimulation:
         self.create_variables()
 
     def prepare_simulation_2(self) -> None:
-        """Run at the start of simulation. Used for initialization etc."""
+        """Part 2 of prepare_simulation."""
         # After fluid and variables are defined, we can define the secondary quantities
         # like fluid properties (which depend on variables). Creating fluid and
         # variables before defining secondary thermodynamic properties is critical in
@@ -42,11 +59,3 @@ class TwoPartedPrepareSimulation:
 
         # Export initial condition
         self.save_data_time_step()
-
-
-def prepare_simulation(self) -> None:
-    """Run at the start of simulation. Used for initialization etc."""
-    if self.params.get("prepare_simulation_1", True):
-        self.prepare_simulation_1()
-    if self.params.get("prepare_simulation_2", True):
-        self.prepare_simulation_2()
