@@ -24,33 +24,33 @@ class InitialCondition:
                     values, [var], iterate_index=0, time_step_index=0
                 )
 
-    def initial_pressure(self, subdomains: Optional[list[pp.Grid]] = None):
-        if subdomains is None:
-            return 0.0
-        else:
-            return np.concatenate([np.zeros(sd.num_cells) for sd in subdomains])
-
-    def initial_displacement(self, sd=None):
-        # Want to actually solve a mechanics problem alone with glued fractures.
-        if sd is None:
-            return np.zeros((self.nd, self.mdg.num_cells))
-        else:
-            return np.zeros((self.nd, sd.num_cells))
-
-    def initial_contact_traction(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
-        """Initial contact traction [Pa].
-
-        Parameters:
-            subdomains: List of subdomains.
-
-        Returns:
-            Operator for initial contact traction.
-
-        """
-        assert len(subdomains) == 1
-        sd = subdomains[0]
-        traction_vals = np.zeros((self.nd, sd.num_cells))
-        return traction_vals.ravel("F")
+#    def initial_pressure(self, subdomains: Optional[list[pp.Grid]] = None):
+#        if subdomains is None:
+#            return 0.0
+#        else:
+#            return np.concatenate([np.zeros(sd.num_cells) for sd in subdomains])
+#
+#    def initial_displacement(self, sd=None):
+#        # Want to actually solve a mechanics problem alone with glued fractures.
+#        if sd is None:
+#            return np.zeros((self.nd, self.mdg.num_cells))
+#        else:
+#            return np.zeros((self.nd, sd.num_cells))
+#
+#    def initial_contact_traction(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
+#        """Initial contact traction [Pa].
+#
+#        Parameters:
+#            subdomains: List of subdomains.
+#
+#        Returns:
+#            Operator for initial contact traction.
+#
+#        """
+#        assert len(subdomains) == 1
+#        sd = subdomains[0]
+#        traction_vals = np.zeros((self.nd, sd.num_cells))
+#        return traction_vals.ravel("F")
 
 
 class InitialConditionFromParameters:
