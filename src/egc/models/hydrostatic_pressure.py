@@ -89,7 +89,7 @@ class HydrostaticPressureInitialization(HydrostaticPressure):
 
         # Update injection pressure
         for sd in self.mdg.subdomains(return_data=False):
-            active_indicator = float(self.time_manager.time < 1 * pp.DAY + 1e-5)
+            active_indicator = float(self.time_manager.time_index == 1)
             pp.set_solution_values(
                 name="pressure_constraint_indicator",
                 values=active_indicator * np.ones(sd.num_cells, dtype=float),
