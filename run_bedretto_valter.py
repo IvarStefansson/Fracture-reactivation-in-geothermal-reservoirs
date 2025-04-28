@@ -82,14 +82,16 @@ if __name__ == "__main__":
 
     # Mesh refinement
     cell_size = {
-        0: 100,
+        0: 1000,
         1: 100,
         2: 100,
+        3: 100,
     }
     cell_size_fracture = {
-        0: 50,
-        1: 10,
-        2: 1,
+        0: 100,
+        1: 50,
+        2: 10,
+        3: 1,
     }
 
     # Model parameters
@@ -101,12 +103,11 @@ if __name__ == "__main__":
         # Time
         "time_manager": pp.TimeManager(
             schedule=[0] + injection_schedule["time"],
-            dt_init=0.125
-            * pp.DAY,  # TODO reduce? or allow Days in the start, but reduce to 0.01 hour later?
-            dt_min_max=(20 * pp.SECOND, pp.DAY),  # TODO reduce dt_min
+            dt_init=0.125 * pp.DAY,
+            dt_min_max=(10 * pp.SECOND, pp.DAY),
             constant_dt=False,
             print_info=True,
-            iter_optimal_range=(10, 20),
+            iter_optimal_range=(4, 20),
             iter_max=100,
         ),
         # Material
