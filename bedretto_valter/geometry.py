@@ -23,7 +23,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             "ymin": self.units.convert_units(-500, "m"),
             "ymax": self.units.convert_units(500, "m"),
             "zmin": self.units.convert_units(-1500, "m"),
-            "zmax": self.units.convert_units(-500, "m"),
+            "zmax": self.units.convert_units(-800, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
@@ -42,8 +42,48 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
 
     def cb1(self, md) -> np.ndarray:
         """TM: tunnel depth in m. (x,y)=(0,0) corresponds to the lab."""
-        xyz = np.array([0, 0, self.units.convert_units(-1000 - md, "m")])
-        return xyz
+        tm = 2050  # m
+        tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
+        azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
+        inclination = 45 / 180 * np.pi  # 45 deg
+        length = 303  # m
+        # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
+        xyz = (
+            np.array([0, 0, -1000])
+            + (tm - 2050)
+            * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
+            - md
+            * np.array(
+                [
+                    np.cos(-azimuth_orientation) * np.sin(-inclination),
+                    np.sin(-azimuth_orientation) * np.sin(-inclination),
+                    np.cos(-inclination),
+                ]
+            )
+        )
+        return self.units.convert_units(xyz, "m")
+
+    def cb2(self, md) -> np.ndarray:
+        tm = 2043  # m
+        tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
+        azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
+        inclination = 40 / 180 * np.pi  # 45 deg
+        length = 220  # m
+        # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
+        xyz = (
+            np.array([0, 0, -1000])
+            + (tm - 2050)
+            * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
+            - md
+            * np.array(
+                [
+                    np.cos(-azimuth_orientation) * np.sin(-inclination),
+                    np.sin(-azimuth_orientation) * np.sin(-inclination),
+                    np.cos(-inclination),
+                ]
+            )
+        )
+        return self.units.convert_units(xyz, "m")
 
     def set_fractures(self) -> None:
         # Interval 14
@@ -60,9 +100,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             )
         ]
         pressurized_14 = len(interval_14) * [False]
-        center_14 = [
-            self.cb1(90)
-        ]
+        center_14 = [self.cb1(90)]
 
         # Interval 13
         interval_13 = [
@@ -78,9 +116,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_13 = len(interval_13) * [False]
-        center_13 = [
-            self.cb1(110)
-        ]
+        center_13 = [self.cb1(110)]
 
         # Interval 12
         interval_12 = [
@@ -118,9 +154,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         ]
         pressurized_12 = len(interval_12) * [False]
         center_12 = [
-#            self.cb1(131),
-#            self.cb1(133),
-#            self.cb1(135),
+            #            self.cb1(131),
+            #            self.cb1(133),
+            #            self.cb1(135),
         ]
 
         # Interval 11
@@ -137,9 +173,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_11 = len(interval_11) * [False]
-        center_11 = [
-            self.cb1(140)
-        ]
+        center_11 = [self.cb1(140)]
 
         # Interval 10
         interval_10 = [
@@ -147,7 +181,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(165),
                 major_axis=self.units.convert_units(50, "m"),
                 minor_axis=self.units.convert_units(50, "m"),
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=231 * np.pi / 180,  # E-W
                 dip_angle=69 * np.pi / 180,
                 num_points=16,
@@ -164,7 +198,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(185),
                 major_axis=self.units.convert_units(50, "m"),
                 minor_axis=self.units.convert_units(50, "m"),
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=227 * np.pi / 180,  # E-W
                 dip_angle=59 * np.pi / 180,
                 num_points=16,
@@ -172,9 +206,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_9 = len(interval_9) * [True]
-        center_9 = [
-            self.cb1(185)
-        ]
+        center_9 = [self.cb1(185)]
 
         # Interval 8
         interval_8 = [
@@ -190,9 +222,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             ),
         ]
         pressurized_8 = len(interval_8) * [False]
-        center_8 = [
-            self.cb1(208)
-        ]
+        center_8 = [self.cb1(208)]
 
         # Interval 7
         interval_7 = [
@@ -218,9 +248,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             # ),
         ]
         pressurized_7 = len(interval_7) * [False]
-        center_7 = [
-            self.cb1(219)
-        ]
+        center_7 = [self.cb1(219)]
 
         self._fractures = (
             interval_14
@@ -262,3 +290,20 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             + center_8
             + center_7
         )[np.array(mask_pressurized, dtype=bool)]
+
+    #    self._fractures = []
+
+    # def set_well_network(self) -> None:
+    #    """Assign well network class."""
+    #    well_coords = [
+    #        np.vstack((
+    #            self.cb1(0),
+    #            self.cb1(303)
+    #        )).transpose(),
+    #        np.vstack((
+    #            self.cb2(0),
+    #            self.cb2(220)
+    #        )).transpose(),
+    #    ]
+    #    wells = [pp.Well(wc) for wc in well_coords]
+    #    self.well_network = pp.WellNetwork3d(domain=self._domain, wells=wells, parameters={"mesh_size": self.params["cell_size"]})
