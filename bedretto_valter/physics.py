@@ -375,18 +375,20 @@ class SimpleTPFAFlow:
 
 
 class BedrettoValter_Physics(
-    #egc.HydrostaticPressureInitialCondition,
+    egc.HydrostaticPressureInitialCondition,
     PorePressure,
     HorizontalBackgroundStress,
     egc.HydrostaticPressureBC,
     egc.LithostaticPressureBC,
-    egc.HydrostaticPressureInitialization,
-    #egc.EquilibriumStateInitialization,
     PressureConstraintWell,
+    # egc.HydrostaticPressureInitialization,
+    # egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
+    egc.AlternatingDecoupling,  # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
     # CustomFracturePermeability,
+    SimpleTPFAFlow,
     pp.poromechanics.Poromechanics,  # Basic model
 ): ...
