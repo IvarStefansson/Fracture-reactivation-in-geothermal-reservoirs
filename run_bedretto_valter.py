@@ -176,14 +176,14 @@ if __name__ == "__main__":
     solver_params = {
         "nonlinear_solver": AANewtonSolver,  # pp.NewtonSolver,
         "max_iterations": 200,
-        "nl_convergence_tol": 1e-6,
-        "nl_convergence_tol_rel": 1e-6,
-        "nl_convergence_tol_res": 1e-6,
-        "nl_convergence_tol_res_rel": 1e-6,
-        "nl_convergence_tol_tight": 1e-10,
-        "nl_convergence_tol_rel_tight": 1e-10,
-        "nl_convergence_tol_res_tight": 1e-10,
-        "nl_convergence_tol_res_rel_tight": 1e-10,
+        "nl_convergence_tol": 1e-5,
+        "nl_convergence_tol_rel": 1e-5,
+        "nl_convergence_tol_res": 1e-5,
+        "nl_convergence_tol_res_rel": 1e-5,
+        "nl_convergence_tol_tight": 1e-8,
+        "nl_convergence_tol_rel_tight": 1e-8,
+        "nl_convergence_tol_res_tight": 1e-8,
+        "nl_convergence_tol_res_rel_tight": 1e-8,
     }
 
     # Model setup
