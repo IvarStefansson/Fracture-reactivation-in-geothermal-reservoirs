@@ -1,6 +1,11 @@
 from .models.initial_condition import InitialCondition, InitialConditionFromParameters
 
-from .models.equilibrium import EquilibriumStateInitialization, AlternatingDecoupling
+from .models.equilibrium import (
+    EquilibriumStateInitialization,
+    AlternatingDecouplingInTime,
+    AlternatingDecouplingInNewton,
+    CacheReferenceState,
+)
 
 from .models.hydrostatic_pressure import (
     HydrostaticPressureBC,
@@ -13,7 +18,7 @@ from .models.lithostatic_pressure import BackgroundStress, LithostaticPressureBC
 from .models.normal_permeability import (
     ScalarPermeability,
     NormalPermeabilityFromHigherDimension,
-    NormalPermeabilityFromLowerDimension
+    NormalPermeabilityFromLowerDimension,
 )
 
 from .models.background_deformation import BackgroundDeformation
