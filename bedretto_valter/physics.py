@@ -16,7 +16,7 @@ fluid_parameters: dict[str, float] = {
 # Values from Multi-disciplinary characterizations of the BedrettoLab
 solid_parameters: dict[str, float] = {
     # Guessed
-    "dilation_angle": 0.0,  # guessed # TODO
+    "dilation_angle": 0.1,  # guessed # TODO
     # Literature values
     "biot_coefficient": 1,  # guessed by Vaezi et al.
     "permeability": 4.35e-6 * pp.DARCY,  # X.Ma et al.
