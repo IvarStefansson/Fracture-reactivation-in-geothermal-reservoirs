@@ -14,7 +14,7 @@ from bedretto_valter.physics import (
     injection_schedule,
 )
 from ncp import AdvancedSolverStatistics, AANewtonSolver
-from egc import setup_model
+from egc import setup_model, AlternatingDecouplingInTime, AlternatingDecouplingInNewton
 from bedretto_valter.model import BedrettoValterModel
 
 # Set logging level
@@ -30,6 +30,8 @@ def generate_case_name(
     mesh_refinement,
     simple_flow,
     tpfa_flow,
+    decoupling,
+    iterative_decoupling,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
@@ -41,6 +43,10 @@ def generate_case_name(
         name += "_simple_flow"
     if tpfa_flow:
         name += "_tpfa_flow"
+    if decoupling:
+        name += "_decoupling"
+    if iterative_decoupling:
+        name += "_iterative_decoupling"
     return folder / name
 
 
@@ -93,6 +99,11 @@ if __name__ == "__main__":
     )
     parser.add_argument(
         "--decoupling",
+        action="store_true",
+        help="If provided, alernating decoupling is used",
+    )
+    parser.add_argument(
+        "--iterative-decoupling",
         action="store_true",
         help="If provided, alernating decoupling is used",
     )
@@ -155,6 +166,8 @@ if __name__ == "__main__":
             args.mesh_refinement,
             args.simple_flow,
             args.tpfa_flow,
+            args.decoupling,
+            args.iterative_decoupling,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
@@ -188,7 +201,10 @@ if __name__ == "__main__":
     )
 
     if args.decoupling:
-        class Model(egc.AlternatingDecoupling, Model): ...
+        class Model(AlternatingDecouplingInTime, Model): ...
+
+    elif args.iterative_decoupling:
+        class Model(AlternatingDecouplingInNewton, Model): ...
 
     # Run the model
     model = Model(model_params)
