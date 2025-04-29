@@ -235,7 +235,7 @@ class CacheReferenceState:
             logger.info("Caching reference state")
 
 
-class AlternatingDecoupling(EquilibriumStateInitialization):
+class AlternatingDecouplingInTime(EquilibriumStateInitialization):
     """Initialization of flow and momentum balance equations through decoupling."""
 
     def inactive_momentum_balance(self):
@@ -243,3 +243,12 @@ class AlternatingDecoupling(EquilibriumStateInitialization):
 
     def inactive_single_phase_flow(self):
         return self.time_manager.time_index % 2 == 1
+
+class AlternatingDecouplingInNewton(EquilibriumStateInitialization):
+    """Initialization of flow and momentum balance equations through decoupling."""
+
+    def inactive_momentum_balance(self):
+        return self.nonlinear_solver_statistics.num_iteration % 2 == 0
+
+    def inactive_single_phase_flow(self):
+        return self.nonlinear_solver_statistics.num_iteration % 2 == 1
