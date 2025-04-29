@@ -24,10 +24,16 @@ class NewtonReturnMap:
     def before_nonlinear_iteration(self) -> None:
         if (
             self.nonlinear_solver_statistics.num_iteration > 0
-            and (self.cycling_window > 1)
-            or (
-                self.nonlinear_solver_statistics.nonlinear_increment_norms[-1] > 1e3
-                or self.nonlinear_solver_statistics.residual_norms[-1] > 1e3)
+            and (
+                (self.cycling_window > 1)
+                or (
+                    len(self.nonlinear_solver_statistics.residual_norms) > 0
+                    and self.nonlinear_solver_statistics.nonlinear_increment_norms[-1] > 1e3
+                ) or (
+                    len(self.nonlinear_solver_statistics.residual_norms) > 0
+                    and self.nonlinear_solver_statistics.residual_norms[-1] > 1e3
+                )
+            )
         ):
             # Evaluate tractions and the friction bound.
             fracture_domains = self.mdg.subdomains(dim=self.nd - 1)
