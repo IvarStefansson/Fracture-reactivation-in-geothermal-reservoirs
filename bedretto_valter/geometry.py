@@ -15,17 +15,18 @@ import porepy as pp
 from porepy.applications.md_grids.model_geometries import CubeDomainOrthogonalFractures
 
 
-disk_radius = 20
+disk_radius = 50  # NOTE: 20 results in not-connected fractures
+
 
 class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     def set_domain(self) -> None:
         bounding_box = {
-            "xmin": self.units.convert_units(-200, "m"),
-            "xmax": self.units.convert_units(200, "m"),
-            "ymin": self.units.convert_units(-200, "m"),
-            "ymax": self.units.convert_units(200, "m"),
-            "zmin": self.units.convert_units(-1350, "m"),
-            "zmax": self.units.convert_units(-950, "m"),
+            "xmin": self.units.convert_units(-350, "m"),
+            "xmax": self.units.convert_units(350, "m"),
+            "ymin": self.units.convert_units(-350, "m"),
+            "ymax": self.units.convert_units(350, "m"),
+            "zmin": self.units.convert_units(-1450, "m"),
+            "zmax": self.units.convert_units(-750, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
@@ -44,8 +45,9 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
 
     def tunnel(self, tm) -> np.ndarray:
         tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
-        return np.array([0, 0, -1000]) + (tm - 2050) * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
-
+        return np.array([0, 0, -1000]) + (tm - 2050) * np.array(
+            [np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0]
+        )
 
     def cb1(self, md) -> np.ndarray:
         """TM: tunnel depth in m. (x,y)=(0,0) corresponds to the lab."""
@@ -53,16 +55,12 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
         inclination = 45 / 180 * np.pi  # 45 deg
         # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
-        xyz = (
-            self.tunnel(tm)
-            - md
-            * np.array(
-                [
-                    np.cos(-azimuth_orientation) * np.sin(-inclination),
-                    np.sin(-azimuth_orientation) * np.sin(-inclination),
-                    np.cos(-inclination),
-                ]
-            )
+        xyz = self.tunnel(tm) - md * np.array(
+            [
+                np.cos(-azimuth_orientation) * np.sin(-inclination),
+                np.sin(-azimuth_orientation) * np.sin(-inclination),
+                np.cos(-inclination),
+            ]
         )
         return self.units.convert_units(xyz, "m")
 
@@ -71,16 +69,12 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
         inclination = 40 / 180 * np.pi  # 45 deg
         # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
-        xyz = (
-            self.tunnel(tm)
-            - md
-            * np.array(
-                [
-                    np.cos(-azimuth_orientation) * np.sin(-inclination),
-                    np.sin(-azimuth_orientation) * np.sin(-inclination),
-                    np.cos(-inclination),
-                ]
-            )
+        xyz = self.tunnel(tm) - md * np.array(
+            [
+                np.cos(-azimuth_orientation) * np.sin(-inclination),
+                np.sin(-azimuth_orientation) * np.sin(-inclination),
+                np.cos(-inclination),
+            ]
         )
         return self.units.convert_units(xyz, "m")
 
@@ -121,14 +115,14 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         interval_12 = [
             # NOTE: The interesting one!
             pp.create_elliptic_fracture(
-               center=self.cb1(131),
-               major_axis=self.units.convert_units(disk_radius, "m"),
-               minor_axis=self.units.convert_units(disk_radius, "m"),
-               major_axis_angle=0,  # TODO?
-               strike_angle= 231 * np.pi / 180,  # E-W
-               dip_angle=50 * np.pi / 180,
-               num_points=16,
-               # index=0,
+                center=self.cb1(131),
+                major_axis=self.units.convert_units(disk_radius, "m"),
+                minor_axis=self.units.convert_units(disk_radius, "m"),
+                major_axis_angle=0,  # TODO?
+                strike_angle=231 * np.pi / 180,  # E-W
+                dip_angle=50 * np.pi / 180,
+                num_points=16,
+                # index=0,
             ),
             # pp.create_elliptic_fracture(
             #    center=self.cb1(133),
@@ -250,49 +244,42 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         center_7 = [self.cb1(219)]
 
         self._fractures = (
-            interval_14
-            + interval_13
-            + interval_12
-            + interval_11
-            + interval_10
-            + interval_9
-            + interval_8
-            + interval_7
+            # interval_14
+            # + interval_13
+            # + interval_12
+            # + interval_11
+            # +
+            interval_10 + interval_9 + interval_8 + interval_7
         )
         mask_pressurized = (
-            pressurized_14
-            + pressurized_13
-            + pressurized_12
-            + pressurized_11
-            + pressurized_10
-            + pressurized_9
-            + pressurized_8
-            + pressurized_7
+            # pressurized_14
+            # + pressurized_13
+            # + pressurized_12
+            # + pressurized_11
+            # +
+            pressurized_10 + pressurized_9 + pressurized_8 + pressurized_7
         )
         self.pressurized_fractures = np.where(
-            pressurized_14
-            + pressurized_13
-            + pressurized_12
-            + pressurized_11
-            + pressurized_10
-            + pressurized_9
-            + pressurized_8
-            + pressurized_7
+            # pressurized_14
+            # + pressurized_13
+            # + pressurized_12
+            # + pressurized_11
+            # +
+            pressurized_10 + pressurized_9 + pressurized_8 + pressurized_7
         )[0]
         self.fracture_centers = np.array(
-            center_14
-            + center_13
-            + center_12
-            + center_11
-            + center_10
-            + center_9
-            + center_8
-            + center_7
+            # center_14
+            # + center_13
+            # + center_12
+            # + center_11
+            # +
+            center_10 + center_9 + center_8 + center_7
         )[np.array(mask_pressurized, dtype=bool)]
 
+    # This lower part is only used in order to construct vtu files containing the tunnel and the wells
     #    self._fractures = []
 
-    #def set_well_network(self) -> None:
+    # def set_well_network(self) -> None:
     #    """Assign well network class."""
     #    well_coords = [
     #        #np.vstack((
