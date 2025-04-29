@@ -123,7 +123,7 @@ if __name__ == "__main__":
         0: 100,
         1: 50,
         2: 10,
-        3: 1,
+        3: 5,
     }
 
     # Model parameters
