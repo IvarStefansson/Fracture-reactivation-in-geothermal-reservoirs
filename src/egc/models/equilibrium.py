@@ -2,7 +2,8 @@ import porepy as pp
 import porepy as pp
 
 from porepy.models.fluid_mass_balance import FluidMassBalanceEquations
-
+import logging
+logger = logging.getLogger(__name__)
 
 class ConstrainedSinglePhaseFlow:
     """Deactivate momentum balance equation."""
@@ -192,50 +193,46 @@ class EquilibriumStateInitialization(
     def constrained_well_flux(self, interfaces: list[pp.MortarGrid]) -> pp.ad.Operator:
         return self.well_flux(interfaces).previous_iteration()
 
-    def cache_equilibrium_state(self) -> None:
-        """Caching of equilibrium states."""
+class CacheReferenceState:
 
-        initializing_flow = self.inactive_momentum_balance()
-        initializing_momentum_balance = (
-            not self.inactive_momentum_balance() and self.inactive_single_phase_flow()
-        )
-        if not initializing_flow and not hasattr(self, "has_equilibrium_flow_state"):
+    def cache_reference_state(self) -> None:
+        """Caching of reference states."""
+
+        if not hasattr(self, "has_reference_flow_state"):
             for sd in self.mdg.subdomains(return_data=False):
                 pp.set_solution_values(
-                    name="equilibrium_pressure",
+                    name="reference_pressure",
                     values=self.pressure([sd]).value(self.equation_system),
                     data=self.mdg.subdomain_data(sd),
                     iterate_index=0,
                 )
-            self.has_equilibrium_flow_state = True
+            self.has_reference_flow_state = True
 
-        if (
-            not initializing_flow
-            and not initializing_momentum_balance
-            and not hasattr(self, "has_equilibrium_momentum_state")
-        ):
+        if not hasattr(self, "has_reference_momentum_state"):
             for sd in self.mdg.subdomains(return_data=False, dim=self.nd):
                 pp.set_solution_values(
-                    name="equilibrium_displacement",
+                    name="reference_displacement",
                     values=self.displacement([sd]).value(self.equation_system),
                     data=self.mdg.subdomain_data(sd),
                     iterate_index=0,
                 )
             for intf in self.mdg.interfaces(return_data=False, dim=self.nd - 1):
                 pp.set_solution_values(
-                    name="equilibrium_interface_displacement",
+                    name="reference_interface_displacement",
                     values=self.interface_displacement([intf]).value(
                         self.equation_system
                     ),
                     data=self.mdg.interface_data(intf),
                     iterate_index=0,
                 )
-            self.has_equilibrium_momentum_state = True
+            self.has_reference_momentum_state = True
 
     def update_time_dependent_ad_arrays(self) -> None:
-        """Cache equilibrium state in data dictionaries."""
+        """Cache reference state in data dictionaries."""
         super().update_time_dependent_ad_arrays()
-        self.cache_equilibrium_state()
+        if self.time_manager.time_index == 2:
+            self.cache_reference_state()
+            logger.info("Caching reference state")
 
 
 class AlternatingDecoupling(EquilibriumStateInitialization):
