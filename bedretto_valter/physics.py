@@ -51,7 +51,7 @@ if False:
     }
 else:
     # Inspired by Vaezi et al.
-    overpressure_initialization = [(i * pp.DAY, 0) for i in [0.25, 0.5, 0.75, 1]]
+    overpressure_initialization = [(i * pp.DAY, 0) for i in [0.25]] #, 0.5, 0.75, 1]]
     offset = overpressure_initialization[-1][0]
     overpressure_schedule = [
         (0.05 * pp.HOUR, 2 * pp.MEGA),
@@ -223,7 +223,7 @@ class PressureConstraintWell:
             injection_schedule["overpressure"],
             left=0.0,
         )
-        ic(self.time_manager.time - pp.DAY, current_injection_overpressure)
+        ic(self.time_manager.time - offset, current_injection_overpressure)
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
                 name="current_injection_overpressure",
@@ -258,7 +258,6 @@ class PressureConstraintWell:
         for i, sd in enumerate(subdomains):
             if sd in pressurized_interval:
                 well_loc = injection_coord[sd]
-                print(well_loc)
                 well_loc_ind = sd.closest_cell(well_loc)
                 sd_indicator[i][well_loc_ind] = 1
 
