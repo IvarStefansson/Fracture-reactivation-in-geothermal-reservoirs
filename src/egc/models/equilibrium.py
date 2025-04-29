@@ -230,7 +230,7 @@ class CacheReferenceState:
     def update_time_dependent_ad_arrays(self) -> None:
         """Cache reference state in data dictionaries."""
         super().update_time_dependent_ad_arrays()
-        if self.time_manager.time_index == 2:
+        if self.time_manager.time_index == 3:
             self.cache_reference_state()
             logger.info("Caching reference state")
 
