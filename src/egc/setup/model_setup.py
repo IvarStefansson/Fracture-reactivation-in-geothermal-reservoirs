@@ -12,6 +12,7 @@ from ncp import (
 from porepy.numerics.nonlinear import line_search
 from FTHM_Solver.hm_solver import IterativeHMSolver
 from egc import NewtonReturnMap
+from ncp import NCPContactIndicators
 
 def setup_model(BaseModel, model_params: dict, 
                 solver_params: dict,
@@ -86,11 +87,19 @@ def setup_model(BaseModel, model_params: dict,
 
         case "linesearch":
 
-            class Model(
-                pp.models.solution_strategy.ContactIndicators,
-                Model,
-            ):
-                """Added contact indicators for line search."""
+            if formulation.lower() in ["rr-nonlinear", "rr-linear"]:
+                class Model(
+                    pp.models.solution_strategy.ContactIndicators,
+                    Model,
+                ):
+                    """Added contact indicators for line search."""
+
+            elif formulation.lower() in ["ncp-min", "ncp-fb-partial", "ncp-fb"]:
+                class Model(
+                    NCPContactIndicators,
+                    Model,
+                ):
+                    """Added contact indicators for line search."""
 
             class ConstraintLineSearchNonlinearSolver(
                 line_search.ConstraintLineSearch,  # The tailoring to contact constraints.
