@@ -18,12 +18,12 @@ from porepy.applications.md_grids.model_geometries import CubeDomainOrthogonalFr
 class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     def set_domain(self) -> None:
         bounding_box = {
-            "xmin": self.units.convert_units(-500, "m"),
-            "xmax": self.units.convert_units(500, "m"),
-            "ymin": self.units.convert_units(-500, "m"),
-            "ymax": self.units.convert_units(500, "m"),
-            "zmin": self.units.convert_units(-1500, "m"),
-            "zmax": self.units.convert_units(-800, "m"),
+            "xmin": self.units.convert_units(-200, "m"),
+            "xmax": self.units.convert_units(200, "m"),
+            "ymin": self.units.convert_units(-200, "m"),
+            "ymax": self.units.convert_units(200, "m"),
+            "zmin": self.units.convert_units(-1350, "m"),
+            "zmax": self.units.convert_units(-950, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
@@ -40,18 +40,19 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     def grid_type(self) -> str:
         return "simplex"
 
+    def tunnel(self, tm) -> np.ndarray:
+        tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
+        return np.array([0, 0, -1000]) + (tm - 2050) * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
+
+
     def cb1(self, md) -> np.ndarray:
         """TM: tunnel depth in m. (x,y)=(0,0) corresponds to the lab."""
         tm = 2050  # m
-        tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
         azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
         inclination = 45 / 180 * np.pi  # 45 deg
-        length = 303  # m
         # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
         xyz = (
-            np.array([0, 0, -1000])
-            + (tm - 2050)
-            * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
+            self.tunnel(tm)
             - md
             * np.array(
                 [
@@ -65,15 +66,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
 
     def cb2(self, md) -> np.ndarray:
         tm = 2043  # m
-        tunnel_orientation = 43 / 180 * np.pi  # N 43 deg W
         azimuth_orientation = 133 / 180 * np.pi  # N 133 deg W
         inclination = 40 / 180 * np.pi  # 45 deg
-        length = 220  # m
         # Set cb1 to the center of the tunnel, and tunnel at -1000 m depth
         xyz = (
-            np.array([0, 0, -1000])
-            + (tm - 2050)
-            * np.array([np.cos(-tunnel_orientation), np.sin(-tunnel_orientation), 0])
+            self.tunnel(tm)
             - md
             * np.array(
                 [
@@ -121,16 +118,16 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         # Interval 12
         interval_12 = [
             # NOTE: The interesting one!
-            # pp.create_elliptic_fracture(
-            #    center=self.cb1(131),
-            #    major_axis=self.units.convert_units(50, "m"),
-            #    minor_axis=self.units.convert_units(50, "m"),
-            #    major_axis_angle=0,  # TODO?
-            #    strike_angle= 231 * np.pi / 180,  # E-W
-            #    dip_angle=50 * np.pi / 180,
-            #    num_points=16,
-            #    # index=0,
-            # ),
+            pp.create_elliptic_fracture(
+               center=self.cb1(131),
+               major_axis=self.units.convert_units(50, "m"),
+               minor_axis=self.units.convert_units(50, "m"),
+               major_axis_angle=0,  # TODO?
+               strike_angle= 231 * np.pi / 180,  # E-W
+               dip_angle=50 * np.pi / 180,
+               num_points=16,
+               # index=0,
+            ),
             # pp.create_elliptic_fracture(
             #    center=self.cb1(133),
             #    major_axis=self.units.convert_units(50, "m"),
@@ -154,7 +151,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         ]
         pressurized_12 = len(interval_12) * [False]
         center_12 = [
-            #            self.cb1(131),
+            self.cb1(131),
             #            self.cb1(133),
             #            self.cb1(135),
         ]
@@ -293,17 +290,21 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
 
     #    self._fractures = []
 
-    # def set_well_network(self) -> None:
+    #def set_well_network(self) -> None:
     #    """Assign well network class."""
     #    well_coords = [
+    #        #np.vstack((
+    #        #    self.cb1(0),
+    #        #    self.cb1(303)
+    #        #)).transpose(),
+    #        #np.vstack((
+    #        #    self.cb2(0),
+    #        #    self.cb2(220)
+    #        #)).transpose(),
     #        np.vstack((
-    #            self.cb1(0),
-    #            self.cb1(303)
-    #        )).transpose(),
-    #        np.vstack((
-    #            self.cb2(0),
-    #            self.cb2(220)
-    #        )).transpose(),
+    #            self.tunnel(2000),
+    #            self.tunnel(2100),
+    #        )).transpose()
     #    ]
     #    wells = [pp.Well(wc) for wc in well_coords]
     #    self.well_network = pp.WellNetwork3d(domain=self._domain, wells=wells, parameters={"mesh_size": self.params["cell_size"]})
