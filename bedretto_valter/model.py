@@ -10,7 +10,7 @@ from ncp import (
     LebesgueConvergenceMetrics,
     LogPerformanceDataVectorial,
 )
-
+from egc import CacheReferenceState
 
 class BedrettoValterModel(
     BedrettoValter_Geometry,  # Geometry
@@ -20,6 +20,7 @@ class BedrettoValterModel(
     LebesgueConvergenceMetrics,  # Convergence metrics
     LogPerformanceDataVectorial,  # Tailored convergence checks
     ReverseElasticModuli,  # Characteristic displacement from traction
+    CacheReferenceState,
     BedrettoValter_Physics,  # Basic model, BC and IC
 ):
     """Bedretto model"""
