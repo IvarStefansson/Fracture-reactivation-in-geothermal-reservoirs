@@ -268,6 +268,7 @@ class PressureConstraintWell:
         current_injection_overpressure = pp.ad.TimeDependentDenseArray(
             "current_injection_overpressure", [self.mdg.subdomains()[0]]
         )
+        # assert False, "need equilibrium pressure"
         hydrostatic_pressure = pp.ad.TimeDependentDenseArray(
             "hydrostatic_pressure", subdomains
         )
@@ -394,10 +395,9 @@ class BedrettoValter_Physics(
     HorizontalBackgroundStress,
     egc.HydrostaticPressureBC,
     egc.LithostaticPressureBC,
+    egc.HydrostaticPressureInitialization,
+    #egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
     PressureConstraintWell,
-    # egc.HydrostaticPressureInitialization,
-    egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
-    # egc.AlternatingDecoupling,  # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,
