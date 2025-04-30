@@ -21,19 +21,13 @@ class NewtonReturnMap:
 
     """
 
+    def _nrm_safety(self) -> bool:
+        return True
+
     def before_nonlinear_iteration(self) -> None:
         if (
             self.nonlinear_solver_statistics.num_iteration > 0
-            and (
-                (self.cycling_window > 1)
-                or (
-                    len(self.nonlinear_solver_statistics.residual_norms) > 0
-                    and self.nonlinear_solver_statistics.nonlinear_increment_norms[-1] > 1e3
-                ) or (
-                    len(self.nonlinear_solver_statistics.residual_norms) > 0
-                    and self.nonlinear_solver_statistics.residual_norms[-1] > 1e3
-                )
-            )
+            and self._nrm_safety()
         ):
             # Evaluate tractions and the friction bound.
             fracture_domains = self.mdg.subdomains(dim=self.nd - 1)
@@ -105,3 +99,24 @@ class NewtonReturnMap:
             )
 
         super().before_nonlinear_iteration()
+
+class SafeNewtonReturnMap(NewtonReturnMap):
+    """Preprocessing step for the Newton solver to perform a return map.
+
+    We perform the return map before the nonlinear iteration, since we want
+    the convergence check to be done on the regular Newton update. It is not
+    done before the very first iteration.
+
+    """
+
+    def _nrm_safety(self) -> bool:
+        return (
+            self.cycling_window > 1)
+            or (
+                len(self.nonlinear_solver_statistics.residual_norms) > 0
+                and self.nonlinear_solver_statistics.nonlinear_increment_norms[-1] > 1e3
+            ) or (
+                len(self.nonlinear_solver_statistics.residual_norms) > 0
+                and self.nonlinear_solver_statistics.residual_norms[-1] > 1e3
+            )
+        )
