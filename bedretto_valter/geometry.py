@@ -79,8 +79,13 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         return self.units.convert_units(xyz, "m")
 
     def set_fractures(self) -> None:
+
+        interval = {}
+        center = {}
+        transmissivity = {}
+
         # Interval 14
-        interval_14 = [
+        interval[14] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(90),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -92,11 +97,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             )
         ]
-        pressurized_14 = len(interval_14) * [False]
-        center_14 = [self.cb1(90)]
+        center[14] = [self.cb1(90)]
+        transmissivity[14] = [2.3e-9]
 
         # Interval 13
-        interval_13 = [
+        interval[13] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(110),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -108,11 +113,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             ),
         ]
-        pressurized_13 = len(interval_13) * [False]
-        center_13 = [self.cb1(110)]
+        center[13] = [self.cb1(110)]
+        transmissivity[13] = [8.4e-7]
 
         # Interval 12
-        interval_12 = [
+        interval[12] = [
             # NOTE: The interesting one!
             pp.create_elliptic_fracture(
                 center=self.cb1(131),
@@ -145,15 +150,15 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             #    # index=0,
             # ),
         ]
-        pressurized_12 = len(interval_12) * [False]
-        center_12 = [
+        center[12] = [
             self.cb1(131),
             #            self.cb1(133),
             #            self.cb1(135),
         ]
+        transmissivity[12] = [1.9e-8]
 
         # Interval 11
-        interval_11 = [
+        interval[11] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(140),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -165,11 +170,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             ),
         ]
-        pressurized_11 = len(interval_11) * [False]
-        center_11 = [self.cb1(140)]
+        center[11] = [self.cb1(140)]
+        transmissivity[11] = [5.6e-8]
 
         # Interval 10
-        interval_10 = [
+        interval[10] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(165),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -181,12 +186,12 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             ),
         ]
-        pressurized_10 = len(interval_10) * [False]
-        center_10 = [self.cb1(165)]
+        center[10] = [self.cb1(165)]
+        transmissivity[10] = [1.8e-8]
 
         # Interval 9
         # TODO many more?
-        interval_9 = [
+        interval[9] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(185),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -198,11 +203,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             ),
         ]
-        pressurized_9 = len(interval_9) * [True]
-        center_9 = [self.cb1(185)]
+        center[9] = [self.cb1(185)]
+        transmissivity[9] = [4.1e-8]
 
         # Interval 8
-        interval_8 = [
+        interval[8] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(208),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -214,11 +219,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 # index=0,
             ),
         ]
-        pressurized_8 = len(interval_8) * [False]
-        center_8 = [self.cb1(208)]
+        center[8] = [self.cb1(208)]
+        transmissivity[8] = [3.3e-8]
 
         # Interval 7
-        interval_7 = [
+        interval[7] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(219),
                 major_axis=self.units.convert_units(disk_radius, "m"),
@@ -240,41 +245,49 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             #    # index=0,
             # ),
         ]
-        pressurized_7 = len(interval_7) * [False]
-        center_7 = [self.cb1(219)]
+        center[7] = [self.cb1(219)]
+        transmissivity[7] = [3e-7]
 
-        self._fractures = (
-            # interval_14
-            # + interval_13
-            # + interval_12
-            # + interval_11
-            # +
-            interval_10 + interval_9 + interval_8 + interval_7
-        )
-        mask_pressurized = (
-            # pressurized_14
-            # + pressurized_13
-            # + pressurized_12
-            # + pressurized_11
-            # +
-            pressurized_10 + pressurized_9 + pressurized_8 + pressurized_7
-        )
+        active_intervals = {
+            14: False,
+            13: True,
+            12: True,
+            11: True,
+            10: True,
+            9: True,
+            8: True,
+            7: True,
+        }
+        pressurized_intervals = {
+            14: False,
+            13: False,# True
+            12: False,
+            11: False,
+            10: False,
+            9: False,
+            8: False, # True
+            7: False,
+        }
+        self._fractures = []
+        mask_pressurized = []
+        self.fracture_centers = []
+        self.fracture_transmissivity = []
+        for i, is_active in active_intervals.items():
+            if not is_active:
+                continue
+            self._fractures += interval[i]
+            self.fracture_transmissivity += transmissivity[i]
+            if pressurized_intervals[i]:
+                self.fracture_centers += center[i]
+            mask_pressurized += len(interval[i]) * [pressurized_intervals[i]]
+
+        # Convert to numpy arrays for later use
+        self.fracture_centers = np.array(self.fracture_centers)
+
+        # Local numbering of pressurized fractures
         self.pressurized_fractures = np.where(
-            # pressurized_14
-            # + pressurized_13
-            # + pressurized_12
-            # + pressurized_11
-            # +
-            pressurized_10 + pressurized_9 + pressurized_8 + pressurized_7
+            mask_pressurized
         )[0]
-        self.fracture_centers = np.array(
-            # center_14
-            # + center_13
-            # + center_12
-            # + center_11
-            # +
-            center_10 + center_9 + center_8 + center_7
-        )[np.array(mask_pressurized, dtype=bool)]
 
     # This lower part is only used in order to construct vtu files containing the tunnel and the wells
     #    self._fractures = []
