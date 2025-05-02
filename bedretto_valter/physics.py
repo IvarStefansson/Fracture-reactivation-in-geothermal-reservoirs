@@ -2,16 +2,13 @@ import numpy as np
 import porepy as pp
 import egc
 from icecream import ic
+from porepy.applications.material_values.fluid_values import water
 
 # Based on publications on BedrettoLab
 
 # ! ---- MATERIAL PARAMETERS ----
 
-fluid_parameters: dict[str, float] = {
-    "compressibility": 0,  # 4.6e-10,  # 25 deg C # TODO increase
-    "viscosity": 0.89e-3,  # 25 deg C
-    "density": 998.2e0,
-}
+fluid_parameters: dict[str, float] = water
 
 # Values from Multi-disciplinary characterizations of the BedrettoLab
 solid_parameters: dict[str, float] = {
