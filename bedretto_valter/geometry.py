@@ -79,7 +79,6 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         return self.units.convert_units(xyz, "m")
 
     def set_fractures(self) -> None:
-
         interval = {}
         center = {}
         transmissivity = {}
@@ -248,46 +247,24 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         center[7] = [self.cb1(219)]
         transmissivity[7] = [3e-7]
 
-        active_intervals = {
-            14: False,
-            13: True,
-            12: True,
-            11: True,
-            10: True,
-            9: True,
-            8: True,
-            7: True,
-        }
-        pressurized_intervals = {
-            14: False,
-            13: False,# True
-            12: False,
-            11: False,
-            10: False,
-            9: False,
-            8: False, # True
-            7: False,
-        }
+        # Cache centers
+        self.fracture_center = center
+
+        active_intervals = dict(zip([14, 13, 12, 11, 10, 9, 8, 7], [False] * 8))
+        for i in self.params["active_intervals"]:
+            active_intervals[i] = True
+
+        # Collect fractures to be added to the domain and store relevant information
+        # in terms of local numbering
         self._fractures = []
-        mask_pressurized = []
-        self.fracture_centers = []
         self.fracture_transmissivity = []
-        for i, is_active in active_intervals.items():
+        self.interval_to_local_fracture_index = {}
+        for local_number, (i, is_active) in enumerate(active_intervals.items()):
             if not is_active:
                 continue
             self._fractures += interval[i]
+            self.interval_to_local_fracture_index[i] = local_number
             self.fracture_transmissivity += transmissivity[i]
-            if pressurized_intervals[i]:
-                self.fracture_centers += center[i]
-            mask_pressurized += len(interval[i]) * [pressurized_intervals[i]]
-
-        # Convert to numpy arrays for later use
-        self.fracture_centers = np.array(self.fracture_centers)
-
-        # Local numbering of pressurized fractures
-        self.pressurized_fractures = np.where(
-            mask_pressurized
-        )[0]
 
     # This lower part is only used in order to construct vtu files containing the tunnel and the wells
     #    self._fractures = []
