@@ -1,0 +1,309 @@
+"""Collection of different injection profiles."""
+
+import porepy as pp
+
+
+class InjectionInterval8:
+    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic stimulations
+    at the BedrettoLab. Fig 4a.
+
+    """
+
+    def is_pressure_controlled_injection(self):
+        """Check if the injection is pressure controlled."""
+        return False
+
+    def is_rate_controlled_injection(self):
+        """Check if the injection is rate controlled."""
+        return True
+
+    def rate_schedule(self):
+        """Return the empty rate schedule."""
+        return None
+
+    def _initialization_schedule(self):
+        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
+
+    def _pressure_schedule(self):
+        return [
+            (0 * pp.HOUR, 0),
+            (0.02 * pp.HOUR, 2 * pp.MEGA),
+            (0.2 * pp.HOUR, 2 * pp.MEGA),
+            (0.27 * pp.HOUR, 7.2 * pp.MEGA),
+            (0.32 * pp.HOUR, 6.8 * pp.MEGA),
+            (0.41 * pp.HOUR, 5.8 * pp.MEGA),
+            (0.75 * pp.HOUR, 5.5 * pp.MEGA),
+            (0.77 * pp.HOUR, 12 * pp.MEGA),
+            (0.85 * pp.HOUR, 11 * pp.MEGA),
+            (0.90 * pp.HOUR, 10 * pp.MEGA),
+            (1.16 * pp.HOUR, 10 * pp.MEGA),
+            (1.23 * pp.HOUR, 8.6 * pp.MEGA),
+            (1.24 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.74 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.77 * pp.HOUR, -1.4 * pp.MEGA),
+            (1.87 * pp.HOUR, 0 * pp.MEGA),
+            (2.18 * pp.HOUR, 0.5 * pp.MEGA),
+            (2.19 * pp.HOUR, 2.2 * pp.MEGA),
+            (2.29 * pp.HOUR, 2.1 * pp.MEGA),
+            (2.30 * pp.HOUR, 3.8 * pp.MEGA),
+            (2.40 * pp.HOUR, 4 * pp.MEGA),
+            (2.43 * pp.HOUR, 5 * pp.MEGA),
+            (2.51 * pp.HOUR, 4.6 * pp.MEGA),
+            (2.55 * pp.HOUR, 6 * pp.MEGA),
+            (2.68 * pp.HOUR, 5.4 * pp.MEGA),
+            (2.73 * pp.HOUR, 6.5 * pp.MEGA),
+            (2.85 * pp.HOUR, 6.7 * pp.MEGA),
+            (2.87 * pp.HOUR, 8 * pp.MEGA),
+            (3.02 * pp.HOUR, 8 * pp.MEGA),
+            (3.03 * pp.HOUR, 8.6 * pp.MEGA),
+            (3.08 * pp.HOUR, 8.2 * pp.MEGA),
+            (3.23 * pp.HOUR, 8.1 * pp.MEGA),
+            (3.25 * pp.HOUR, 9.9 * pp.MEGA),
+            (3.29 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.48 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.50 * pp.HOUR, 10.2 * pp.MEGA),
+            (3.55 * pp.HOUR, 9.9 * pp.MEGA),
+            (3.79 * pp.HOUR, 10.8 * pp.MEGA),
+            (4.07 * pp.HOUR, 10.5 * pp.MEGA),
+            (4.30 * pp.HOUR, 7.1 * pp.MEGA),
+            (4.57 * pp.HOUR, 5 * pp.MEGA),
+        ]
+
+    def pressure_schedule(self):
+        # Fetch the initialization and pressure schedules
+        _initialization_schedule = self._initialization_schedule()
+        _pressure_schedule = self._pressure_schedule()
+
+        # Merge the initialization schedule with the pressure schedule
+        offset = _initialization_schedule[-1][0]
+        pressure_schedule = _initialization_schedule + [
+            (t + offset, v) for t, v in _pressure_schedule
+        ]
+
+        # Remove duplicate times
+        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
+        return pressure_schedule
+
+
+class InjectionInterval9:
+    """Adapted from Vaezi et al - not true data?"""
+
+    def is_pressure_controlled_injection(self):
+        """Check if the injection is pressure controlled."""
+        return False
+
+    def is_rate_controlled_injection(self):
+        """Check if the injection is rate controlled."""
+        return True
+
+    def rate_schedule(self):
+        """Return the empty rate schedule."""
+        return None
+
+    def _initialization_schedule(self):
+        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
+
+    def _pressure_schedule(self):
+        return [
+            (0 * pp.HOUR, 0),
+            (0.05 * pp.HOUR, 2 * pp.MEGA),
+            (0.2 * pp.HOUR, 2 * pp.MEGA),
+            (0.25 * pp.HOUR, 4 * pp.MEGA),
+            (0.4 * pp.HOUR, 4 * pp.MEGA),
+            (0.45 * pp.HOUR, 6 * pp.MEGA),
+            (0.6 * pp.HOUR, 6 * pp.MEGA),
+            (0.65 * pp.HOUR, 8 * pp.MEGA),
+            (0.8 * pp.HOUR, 8 * pp.MEGA),
+            (0.85 * pp.HOUR, 10 * pp.MEGA),
+            (1.0 * pp.HOUR, 10 * pp.MEGA),
+            (1.05 * pp.HOUR, 12 * pp.MEGA),
+            (1.2 * pp.HOUR, 12 * pp.MEGA),
+            (1.25 * pp.HOUR, 14 * pp.MEGA),
+            (1.4 * pp.HOUR, 14 * pp.MEGA),
+            (1.45 * pp.HOUR, 12 * pp.MEGA),
+            (1.6 * pp.HOUR, 12 * pp.MEGA),
+            (1.65 * pp.HOUR, 14 * pp.MEGA),
+            (1.8 * pp.HOUR, 14 * pp.MEGA),
+            (1.85 * pp.HOUR, 16 * pp.MEGA),
+            (2.0 * pp.HOUR, 16 * pp.MEGA),
+            (2.05 * pp.HOUR, 20 * pp.MEGA),
+            (2.2 * pp.HOUR, 20 * pp.MEGA),
+            (2.25 * pp.HOUR, 16 * pp.MEGA),
+            (2.4 * pp.HOUR, 8 * pp.MEGA),
+            (2.45 * pp.HOUR, 20 * pp.MEGA),
+            (2.6 * pp.HOUR, 20 * pp.MEGA),
+            (2.65 * pp.HOUR, 16 * pp.MEGA),
+            (2.8 * pp.HOUR, 10 * pp.MEGA),
+            (2.85 * pp.HOUR, 20 * pp.MEGA),
+            (3.0 * pp.HOUR, 20 * pp.MEGA),
+            (3.05 * pp.HOUR, 16 * pp.MEGA),
+            (3.2 * pp.HOUR, 11 * pp.MEGA),
+            (3.25 * pp.HOUR, 20 * pp.MEGA),
+            (3.4 * pp.HOUR, 20 * pp.MEGA),
+            (3.45 * pp.HOUR, 16 * pp.MEGA),
+            (3.6 * pp.HOUR, 12 * pp.MEGA),
+            (3.65 * pp.HOUR, 20 * pp.MEGA),
+            (3.8 * pp.HOUR, 20 * pp.MEGA),
+            (3.85 * pp.HOUR, 16 * pp.MEGA),
+            (4.0 * pp.HOUR, 12 * pp.MEGA),
+            (4.05 * pp.HOUR, 20 * pp.MEGA),
+            (4.2 * pp.HOUR, 20 * pp.MEGA),
+            (4.25 * pp.HOUR, 16 * pp.MEGA),
+            (4.4 * pp.HOUR, 12 * pp.MEGA),
+            (4.45 * pp.HOUR, 20 * pp.MEGA),
+            (4.6 * pp.HOUR, 20 * pp.MEGA),
+            (4.65 * pp.HOUR, 16 * pp.MEGA),
+            (4.8 * pp.HOUR, 12 * pp.MEGA),
+            (4.85 * pp.HOUR, 20 * pp.MEGA),
+            (5.0 * pp.HOUR, 20 * pp.MEGA),
+            (5.05 * pp.HOUR, 16 * pp.MEGA),
+            (5.2 * pp.HOUR, 12 * pp.MEGA),
+            (5.25 * pp.HOUR, 20 * pp.MEGA),
+            (5.4 * pp.HOUR, 20 * pp.MEGA),
+            (5.45 * pp.HOUR, 16 * pp.MEGA),
+            (5.6 * pp.HOUR, 12 * pp.MEGA),
+            (5.65 * pp.HOUR, 20 * pp.MEGA),
+            (5.8 * pp.HOUR, 20 * pp.MEGA),
+            (5.85 * pp.HOUR, 16 * pp.MEGA),
+            (6.0 * pp.HOUR, 12 * pp.MEGA),
+            (6.05 * pp.HOUR, 20 * pp.MEGA),
+            (6.2 * pp.HOUR, 20 * pp.MEGA),
+            (6.25 * pp.HOUR, 16 * pp.MEGA),
+            (6.4 * pp.HOUR, 12 * pp.MEGA),
+            (6.45 * pp.HOUR, 20 * pp.MEGA),
+            (6.6 * pp.HOUR, 20 * pp.MEGA),
+            (6.65 * pp.HOUR, 16 * pp.MEGA),
+            (6.8 * pp.HOUR, 12 * pp.MEGA),
+            (6.85 * pp.HOUR, 20 * pp.MEGA),
+            (7.0 * pp.HOUR, 20 * pp.MEGA),
+            (7.05 * pp.HOUR, 16 * pp.MEGA),
+            (7.2 * pp.HOUR, 12 * pp.MEGA),
+            (7.25 * pp.HOUR, 20 * pp.MEGA),
+            (7.4 * pp.HOUR, 20 * pp.MEGA),
+            (7.45 * pp.HOUR, 16 * pp.MEGA),
+            (7.6 * pp.HOUR, 12 * pp.MEGA),
+            (7.65 * pp.HOUR, 20 * pp.MEGA),
+            (7.8 * pp.HOUR, 20 * pp.MEGA),
+            (7.85 * pp.HOUR, 16 * pp.MEGA),
+            (8.0 * pp.HOUR, 12 * pp.MEGA),
+        ]
+
+    def pressure_schedule(self):
+        # Fetch the initialization and pressure schedules
+        _initialization_schedule = self._initialization_schedule()
+        _pressure_schedule = self._pressure_schedule()
+
+        # Merge the initialization schedule with the pressure schedule
+        offset = _initialization_schedule[-1][0]
+        pressure_schedule = _initialization_schedule + [
+            (t + offset, v) for t, v in _pressure_schedule
+        ]
+
+        # Remove duplicate times
+        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
+        return pressure_schedule
+
+
+class InjectionInterval13:
+    """Adapted from Repolles et al, 2024, Modeling coupled hydro-mechanical
+    processes during hydraulic stimulation at the Bedretto Underground
+    Laboratory, see Fig. 1 in the paper.
+
+    See also Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic
+    stimulations at the BedrettoLab. Fig 4b.
+
+    """
+
+    def injection_coordinate(self):
+        """Defined in geometry.py"""
+        self.fracture_center[13]
+
+    def is_pressure_controlled_injection(self):
+        """Check if the injection is pressure controlled."""
+        return False
+
+    def is_rate_controlled_injection(self):
+        """Check if the injection is rate controlled."""
+        return True
+
+    def pressure_schedule(self):
+        """Return the pressure schedule."""
+        return None
+
+    def _initialization_schedule(self):
+        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
+
+    def _rate_schedule(self):
+        # Conversion factor from l/min to m^3/s
+        conversion_factor_volume = 1e-3 * 60
+        # Injection schedule in l/min
+        schedule = [
+            (0 * pp.HOUR, 0.0),
+            (0.8 * pp.HOUR, 0.0),
+            (0.86 * pp.HOUR, 23),
+            (0.96 * pp.HOUR, 23),
+            (1.05 * pp.HOUR, 33),
+            (1.2 * pp.HOUR, 33),
+            (1.23 * pp.HOUR, 50),
+            (1.4 * pp.HOUR, 50),
+            (1.46 * pp.HOUR, 70),
+            (1.57 * pp.HOUR, 70),
+            (1.64 * pp.HOUR, 75),
+            (1.68 * pp.HOUR, 95),
+            (1.88 * pp.HOUR, 95),
+            (1.93 * pp.HOUR, 110),
+            (2.10 * pp.HOUR, 110),
+            (2.15 * pp.HOUR, 130),
+            (2.25 * pp.HOUR, 130),
+            (2.26 * pp.HOUR, 0),
+            (2.92 * pp.HOUR, 0),
+            (2.95 * pp.HOUR - 167,),
+            (3.01 * pp.HOUR, -172),
+            (3.03 * pp.HOUR, -124),
+            (3.09 * pp.HOUR, -97),
+            (3.20 * pp.HOUR, -69),
+            (3.36 * pp.HOUR, -52),
+            (3.62 * pp.HOUR, -43),
+            (4.02 * pp.HOUR, -40),
+            (4.07 * pp.HOUR, 0),
+            (4.88 * pp.HOUR, 0),
+            (4.93 * pp.HOUR, 28),
+            (5.08 * pp.HOUR, 32),
+            (5.14 * pp.HOUR, 48),
+            (5.27 * pp.HOUR, 52),
+            (5.30 * pp.HOUR, 69),
+            (5.45 * pp.HOUR, 71),
+            (5.49 * pp.HOUR, 87),
+            (5.61 * pp.HOUR, 87),
+            (5.71 * pp.HOUR, 112),
+            (5.80 * pp.HOUR, 115),
+            (5.87 * pp.HOUR, 131),
+            (6.03 * pp.HOUR, 136),
+            (6.10 * pp.HOUR, 151),
+            (6.17 * pp.HOUR, 151),
+            (6.19 * pp.HOUR, 0),
+            (10.0 * pp.HOUR, 0),
+        ]
+        # Convert to m^3/s
+        schedule = [(t, v * conversion_factor_volume) for t, v in schedule]
+        return schedule
+
+    def rate_schedule(self):
+        """Return the rate schedule."""
+
+        # Fetch the initialization and rate schedules
+        _initialization_schedule = self._initialization_schedule()
+        _rate_schedule = self._rate_schedule()
+
+        # Merge the initialization schedule with the rate schedule
+        offset = _initialization_schedule[-1][0]
+        rate_schedule = _initialization_schedule + [
+            (t + offset, v) for t, v in _rate_schedule
+        ]
+
+        # Remove duplicate times
+        rate_schedule = sorted(set(rate_schedule), key=lambda x: x[0])
+
+        return rate_schedule
