@@ -63,6 +63,10 @@ methods = [
     ("rr-linear", "linesearch"),
     ("ncp-min", "linesearch"),
     ("ncp-fb", "linesearch"),
+    ("rr-nonlinear", "None"),
+    ("rr-linear", "None"),
+    ("ncp-min", "None"),
+    ("ncp-fb", "None"),
 ]
 
 safety_measures = ["", "--safe-nrm", "--safe-aa", "--safe-relaxation"]
@@ -112,8 +116,8 @@ for intervals in fractures:
                                         safety_measure,
                                         "--linear-solver",
                                         linear_solver,
-                                        "--simple-flow" if simple_flow else "",
-                                        "--tpfa-flow" if tpfa_flow else "",
+                                        "--simple_flow" if simple_flow else "",
+                                        "--tpfa_flow" if tpfa_flow else "",
                                         "--output",
                                         output,
                                     ]
