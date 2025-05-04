@@ -11,7 +11,7 @@ from bedretto_valter.physics import (
     fluid_parameters,
     numerics_parameters,
     solid_parameters,
-    injection_schedule,
+    Injection,
 )
 from ncp import AdvancedSolverStatistics, AANewtonSolver, AdaptiveNewtonSolver
 from egc import setup_model, AlternatingDecouplingInTime, AlternatingDecouplingInNewton, SafeNewtonReturnMap
@@ -23,6 +23,8 @@ logging.basicConfig(level=logging.INFO)
 
 
 def generate_case_name(
+    intervals,
+    injection_interval,
     formulation,
     linearization,
     relaxation,
@@ -37,6 +39,7 @@ def generate_case_name(
     safe_relaxation,
 ):
     folder = Path(f"bedretto_valter")
+    geometry = f"int_{intervals}_inj_{injection_interval}"
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
@@ -56,7 +59,7 @@ def generate_case_name(
         name += "_safe_aa"
     if safe_relaxation:
         name += "_safe_relaxation"
-    return folder / name
+    return folder / geometry / name
 
 
 if __name__ == "__main__":
@@ -134,6 +137,21 @@ if __name__ == "__main__":
     parser.add_argument(
         "--output", type=str, default="visualization", help="Output folder."
     )
+    # Ask for a list of intervals
+    parser.add_argument(
+        "--intervals",
+        type=int,
+        nargs="+",
+        default=[7, 8, 9, 10, 11, 12, 13, 14],
+        help="List of intervals to use for the simulation.",
+    )
+    # Injection interval
+    parser.add_argument(
+        "--injection-interval",
+        type=int,
+        default=9,
+        help="Injection interval to use for the simulation.",
+    )
     args = parser.parse_args()
 
     # Mesh refinement
@@ -142,12 +160,14 @@ if __name__ == "__main__":
         1: 100,
         2: 100,
         3: 100,
+        4: 20,
     }
     cell_size_fracture = {
         0: 100,
         1: 50,
         2: 10,
         3: 5,
+        4: 1,
     }
 
     # Model parameters
@@ -156,12 +176,14 @@ if __name__ == "__main__":
         "use_simple_flow": args.simple_flow,
         "use_tpfa_flow": args.tpfa_flow,
         # Geometry
-        "gmsh_file_name": "msh/gmsh_frac_file_valter.msh",
+        "gmsh_file_name": f"msh/gmsh_frac_file_valter_{args.intervals}_{args.mesh_refinement}.msh",
+        "active_intervals": args.intervals,
+        "injection_interval": args.injection_interval,
         "cell_size": cell_size[args.mesh_refinement],  # Size of the cells in the mesh
         "cell_size_fracture": cell_size_fracture[args.mesh_refinement],  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
-            schedule=[0] + injection_schedule["time"],
+            schedule=[t for t, _ in Injection().schedule],
             dt_init=0.125 * pp.DAY,
             dt_min_max=(10 * pp.SECOND, pp.DAY),
             constant_dt=False,
@@ -183,6 +205,8 @@ if __name__ == "__main__":
         "max_iterations": 200,  # Needed for export
         "folder_name": Path(args.output)
         / generate_case_name(
+            args.intervals,
+            args.injection_interval,
             args.formulation,
             args.linearization,
             args.relaxation,
@@ -216,6 +240,8 @@ if __name__ == "__main__":
     # Model setup
     Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
     logger.info(f"\n\nRunning {model_params['folder_name']}")
+
+    # Add injection schedule
 
     (Model, model_params, solver_params) = setup_model(
         BedrettoValterModel,
