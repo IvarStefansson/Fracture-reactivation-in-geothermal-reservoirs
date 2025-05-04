@@ -27,6 +27,8 @@ from bedretto_valter.injection import (
     InjectionInterval13,
 )
 
+from bedretto_valter.geometry import SmallDisks, IntermediateDisks
+
 # Set logging level
 logger = logging.getLogger(__name__)
 logging.basicConfig(level=logging.INFO)
@@ -35,6 +37,8 @@ logging.basicConfig(level=logging.INFO)
 def generate_case_name(
     intervals,
     injection_interval,
+    disks,
+    dilation,
     formulation,
     linearization,
     relaxation,
@@ -49,7 +53,7 @@ def generate_case_name(
     safe_relaxation,
 ):
     folder = Path(f"bedretto_valter")
-    geometry = f"int_{intervals}_inj_{injection_interval}"
+    geometry = f"int_{intervals}_inj_{injection_interval}_disks_{disks}_dil_{dilation}"
     name = f"{formulation.lower()}_{linearization.lower()}"
     if relaxation.lower() != "none":
         name += f"_{relaxation.lower()}"
@@ -162,6 +166,21 @@ if __name__ == "__main__":
         default=9,
         help="Injection interval to use for the simulation.",
     )
+    # Small disks
+    parser.add_argument(
+        "--disks",
+        type=str,
+        default="large",
+        help="Disk size (large [default], small, intermediate).",
+    )
+    # Dilation angle
+    parser.add_argument(
+        "--dilation",
+        type=float,
+        default=0.0,
+        help="Dilation angle to use for the simulation.",
+    )
+
     args = parser.parse_args()
 
     # Mesh refinement
@@ -196,6 +215,8 @@ if __name__ == "__main__":
             f"Injection interval {args.injection_interval} not supported. "
             "Please use 8, 9 or 13."
         )
+
+    solid_parameters["dilation_angle"] = args.dilation
 
     # Model parameters
     model_params = {
@@ -236,6 +257,8 @@ if __name__ == "__main__":
         / generate_case_name(
             args.intervals,
             args.injection_interval,
+            args.disks,
+            args.dilation,
             args.formulation,
             args.linearization,
             args.relaxation,
@@ -280,6 +303,18 @@ if __name__ == "__main__":
         args.relaxation,
         args.linear_solver,
     )
+
+    if args.disks == "large":
+        ...
+    elif args.disks == "small":
+        class Model(SmallDisks, Model): ...
+    elif args.disks == "intermediate":
+        class Model(IntermediateDisks, Model): ...
+    else:
+        raise ValueError(
+            f"Disk size {args.disks} not supported. "
+            "Please use large, small or intermediate."
+        )
 
     if args.safe_nrm:
 
