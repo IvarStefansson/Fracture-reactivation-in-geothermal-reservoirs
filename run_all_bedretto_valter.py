@@ -15,7 +15,6 @@ from pathlib import Path
 import time
 
 parser = argparse.ArgumentParser(description="Run single fracture test cases.")
-parser.add_argument("-o", "--option", type=str, default="all", help="Option to run.")
 parser.add_argument("-only-new", "--only-new", action="store_true", help="Only new.")
 parser.add_argument("-dry", "--dry", action="store_true", help="Only dry run.")
 parser.add_argument(
@@ -48,8 +47,8 @@ args = parser.parse_args()
 fractures = [
     "7 8 9 10 11 12 13 14",
     "7 8 9 10",
-    "11 12 13",
-    "8 9 11 13",
+#    "11 12 13",
+#    "8 9 11 13",
 ]
 
 injection = [8, 9, 13]
@@ -63,19 +62,19 @@ methods = [
     ("rr-linear", "linesearch"),
     ("ncp-min", "linesearch"),
     ("ncp-fb", "linesearch"),
-    ("rr-nonlinear", "None"),
-    ("rr-linear", "None"),
-    ("ncp-min", "None"),
-    ("ncp-fb", "None"),
+#    ("rr-nonlinear", "None"),
+#    ("rr-linear", "None"),
+#    ("ncp-min", "None"),
+#    ("ncp-fb", "None"),
 ]
 
-safety_measures = ["", "--safe-nrm", "--safe-aa", "--safe-relaxation"]
+safety_measures = ["", "--safe-nrm"] #, "--safe-aa", "--safe-relaxation"]
 
 linear_solvers = ["pypardiso", "fthm"]
 
 disks = ["large", "small", "intermediate"]
 
-simple = [(False, False), (True, True), (True, False), (False, True)]
+simple = [(False, False), (True, True)] #, (True, False), (False, True)]
 
 linearization = "picard"
 decoupling = False
