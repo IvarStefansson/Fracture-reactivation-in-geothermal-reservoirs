@@ -140,7 +140,6 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(131),
                 major_axis=self.disk_radius[12],
                 minor_axis=self.disk_radius[12],
-                minor_axis=self.,
                 major_axis_angle=0,  # TODO?
                 strike_angle=231 * np.pi / 180,  # E-W
                 dip_angle=80 * np.pi / 180,
