@@ -11,11 +11,21 @@ from bedretto_valter.physics import (
     fluid_parameters,
     numerics_parameters,
     solid_parameters,
-    Injection,
 )
-from ncp import AdvancedSolverStatistics, AANewtonSolver, AdaptiveNewtonSolver
-from egc import setup_model, AlternatingDecouplingInTime, AlternatingDecouplingInNewton, SafeNewtonReturnMap
+from ncp import AdvancedSolverStatistics, AdaptiveNewtonSolver
+from egc import (
+    setup_model,
+    AlternatingDecouplingInTime,
+    AlternatingDecouplingInNewton,
+    SafeNewtonReturnMap,
+)
 from bedretto_valter.model import BedrettoValterModel
+
+from bedretto_valter.injection import (
+    InjectionInterval8,
+    InjectionInterval9,
+    InjectionInterval13,
+)
 
 # Set logging level
 logger = logging.getLogger(__name__)
@@ -160,15 +170,32 @@ if __name__ == "__main__":
         1: 100,
         2: 100,
         3: 100,
-        4: 20,
+        4: 50,
+        5: 20,
     }
     cell_size_fracture = {
         0: 100,
         1: 50,
         2: 10,
         3: 5,
-        4: 1,
+        4: 2,
+        5: 1,
     }
+
+    if args.injection_interval == 8:
+
+        class Injection(InjectionInterval8): ...
+    elif args.injection_interval == 9:
+
+        class Injection(InjectionInterval9): ...
+    elif args.injection_interval == 13:
+
+        class Injection(InjectionInterval13): ...
+    else:
+        raise ValueError(
+            f"Injection interval {args.injection_interval} not supported. "
+            "Please use 8, 9 or 13."
+        )
 
     # Model parameters
     model_params = {
@@ -180,11 +207,13 @@ if __name__ == "__main__":
         "active_intervals": args.intervals,
         "injection_interval": args.injection_interval,
         "cell_size": cell_size[args.mesh_refinement],  # Size of the cells in the mesh
-        "cell_size_fracture": cell_size_fracture[args.mesh_refinement],  # Size of the cells in the fractures
+        "cell_size_fracture": cell_size_fracture[
+            args.mesh_refinement
+        ],  # Size of the cells in the fractures
         # Time
         "time_manager": pp.TimeManager(
             schedule=[t for t, _ in Injection().schedule],
-            dt_init=0.125 * pp.DAY,
+            dt_init=0.5 * pp.HOUR,
             dt_min_max=(10 * pp.SECOND, pp.DAY),
             constant_dt=False,
             print_info=True,
@@ -225,7 +254,8 @@ if __name__ == "__main__":
 
     # Solver parameters
     solver_params = {
-        "nonlinear_solver": AdaptiveNewtonSolver, #AANewtonSolver,  # pp.NewtonSolver,
+        "nonlinear_solver": AdaptiveNewtonSolver,
+        "aa_depth": 0,  # Standard Newton, but stops upon cycling
         "max_iterations": 200,
         "nl_convergence_tol": 1e-5,
         "nl_convergence_tol_rel": 1e-5,
@@ -241,8 +271,6 @@ if __name__ == "__main__":
     Path(model_params["folder_name"]).mkdir(parents=True, exist_ok=True)
     logger.info(f"\n\nRunning {model_params['folder_name']}")
 
-    # Add injection schedule
-
     (Model, model_params, solver_params) = setup_model(
         BedrettoValterModel,
         model_params,
@@ -254,19 +282,27 @@ if __name__ == "__main__":
     )
 
     if args.safe_nrm:
+
         class Model(SafeNewtonReturnMap, Model): ...
-        model_params["aa_depth"] = -10000
+
+        model_params["aa_depth"] = -10000  # Use a value not detected by the solver
 
     if args.safe_aa:
-        model_params["aa_depth"] = -1
+        model_params["aa_depth"] = -1  # Apply AA(1) upon cycling
 
     if args.safe_relaxation:
-        model_params["aa_depth"] = -2
+        model_params["aa_depth"] = -2  # Apply random relaxation upon cycling
 
+    # Add injection schedule
+    class Model(Injection, Model): ...
+
+    # Experimental: loose and iterative coupling
     if args.decoupling:
+
         class Model(AlternatingDecouplingInTime, Model): ...
 
     elif args.iterative_decoupling:
+
         class Model(AlternatingDecouplingInNewton, Model): ...
 
     # Run the model
