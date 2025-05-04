@@ -4,6 +4,7 @@ import porepy as pp
 import numpy as np
 from icecream import ic
 
+
 class PressureConstraintWell:
     """Pressurize specific fractures in their center."""
 
@@ -12,11 +13,11 @@ class PressureConstraintWell:
         super().update_time_dependent_ad_arrays()
 
         # Update injection pressure
-        pressure_schedule = self.pressure_schedule()
+        pressure_schedule = self.schedule
         current_injection_overpressure = np.interp(
             self.time_manager.time,
             [t for t, _ in pressure_schedule],
-            [p for _, p in pressure_schedule]
+            [p for _, p in pressure_schedule],
             left=0.0,
         )
         ic(self.time_manager.time, current_injection_overpressure)
@@ -32,7 +33,6 @@ class PressureConstraintWell:
             )
 
     def mass_balance_equation(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
-
         # Fetch standard mass balance equation
         std_eq = super().mass_balance_equation(subdomains)
 
@@ -42,15 +42,14 @@ class PressureConstraintWell:
             return std_eq
 
         # Identify pressurized fractures
-        pressurized_interval = fracture_sds[self.injection_local_fracture_index]
-        injection_coord = self.injection_coordinate 
+        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[self.injection_local_fracture_index]
 
         # Define indicator for injection cell
         sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
         for i, sd in enumerate(subdomains):
-            if sd == pressurized_interval:
-                injection_cell = sd.closest_cell(injection_coord)
-                sd_indicator[i][injection_cell] = 1
+            if sd == sd_pressurized:
+                injection_cell = sd.closest_cell(self.injection_coordinate.reshape((-1,1)))
+                sd_indicator[i][injection_cell] = 1.
         indicator = np.concatenate(sd_indicator)
         reverse_indicator = 1.0 - indicator
 
@@ -77,8 +76,66 @@ class PressureConstraintWell:
         return eq_with_pressure_constraint
 
 
+class FlowConstraintWell:
+    """Flow constraint for the injection well."""
 
-class InjectionInterval8:
+    def update_time_dependent_ad_arrays(self) -> None:
+        """Set current flow rate."""
+        super().update_time_dependent_ad_arrays()
+
+        # Update injection pressure
+        rate_schedule = self.schedule
+        current_injection_rate = np.interp(
+            self.time_manager.time,
+            [t for t, _ in rate_schedule],
+            [r for _, r in rate_schedule],
+            left=0.0,
+        )
+        ic(self.time_manager.time, current_injection_rate)
+
+        for sd in self.mdg.subdomains(return_data=False):
+            pp.set_solution_values(
+                name="current_injection_rate",
+                values=np.array(
+                    [self.units.convert_units(current_injection_rate, "m^3/s")]
+                ),
+                data=self.mdg.subdomain_data(sd),
+                iterate_index=0,
+            )
+
+    def fluid_source(self, subdomains):
+        std_fluid_source = super().fluid_source(subdomains)
+
+        # Pick fractures
+        fracture_sds = [sd for sd in subdomains if sd.dim == self.nd - 1]
+        if len(fracture_sds) == 0:
+            return std_fluid_source
+
+        # Identify pressurized fractures
+        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[self.injection_local_fracture_index]
+
+        # Define indicator for injection cell
+        sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
+        for i, sd in enumerate(subdomains):
+            if sd == sd_pressurized:
+                injection_cell = sd.closest_cell(self.injection_coordinate.reshape((-1,1)))
+                sd_indicator[i][injection_cell] = 1
+        indicator = np.concatenate(sd_indicator)
+
+        # Fetch flow rate values and fix the flow constraint
+        current_injection_rate = pp.ad.TimeDependentDenseArray(
+            "current_injection_rate", [self.mdg.subdomains()[0]]
+        )
+
+        fluid_source = (
+            std_fluid_source + pp.ad.DenseArray(indicator) * current_injection_rate
+        )
+        fluid_source.set_name(std_fluid_source.name)
+
+        return fluid_source
+
+
+class InjectionInterval8(PressureConstraintWell):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -87,12 +144,12 @@ class InjectionInterval8:
 
     @property
     def injection_local_fracture_index(self):
-        return self.interval_to_local_fracture_index(8)
+        return self.interval_to_local_fracture_index[8]
 
     @property
     def injection_coordinate(self):
         """Defined in geometry.py"""
-        self.fracture_center[8]
+        return self.fracture_center[8][0]
 
     @property
     def is_pressure_controlled_injection(self):
@@ -160,7 +217,7 @@ class InjectionInterval8:
         ]
 
     @property
-    def pressure_schedule(self):
+    def schedule(self):
         # Fetch the initialization and pressure schedules
         _initialization_schedule = self._initialization_schedule
         _pressure_schedule = self._pressure_schedule
@@ -176,17 +233,19 @@ class InjectionInterval8:
         return pressure_schedule
 
 
-class InjectionInterval9:
+class InjectionInterval9(PressureConstraintWell):
     """Adapted from Vaezi et al - not true data?"""
 
     @property
     def injection_local_fracture_index(self):
-        return self.interval_to_local_fracture_index(9)
+        print(self.interval_to_local_fracture_index[9])
+        return self.interval_to_local_fracture_index[9]
 
     @property
     def injection_coordinate(self):
         """Defined in geometry.py"""
-        self.fracture_center[9]
+        print(self.fracture_center[9][0])
+        return self.fracture_center[9][0]
 
     @property
     def is_pressure_controlled_injection(self):
@@ -197,11 +256,6 @@ class InjectionInterval9:
     def is_rate_controlled_injection(self):
         """Check if the injection is rate controlled."""
         return True
-
-    @property
-    def rate_schedule(self):
-        """Return the empty rate schedule."""
-        return None
 
     @property
     def _initialization_schedule(self):
@@ -294,7 +348,7 @@ class InjectionInterval9:
         ]
 
     @property
-    def pressure_schedule(self):
+    def schedule(self):
         # Fetch the initialization and pressure schedules
         _initialization_schedule = self._initialization_schedule
         _pressure_schedule = self._pressure_schedule
@@ -310,7 +364,7 @@ class InjectionInterval9:
         return pressure_schedule
 
 
-class InjectionInterval13:
+class InjectionInterval13(FlowConstraintWell):
     """Adapted from Repolles et al, 2024, Modeling coupled hydro-mechanical
     processes during hydraulic stimulation at the Bedretto Underground
     Laboratory, see Fig. 1 in the paper.
@@ -323,12 +377,12 @@ class InjectionInterval13:
 
     @property
     def injection_local_fracture_index(self):
-        return self.interval_to_local_fracture_index(13)
+        return self.interval_to_local_fracture_index[13]
 
     @property
     def injection_coordinate(self):
         """Defined in geometry.py"""
-        self.fracture_center[13]
+        return self.fracture_center[13][0]
 
     @property
     def is_pressure_controlled_injection(self):
@@ -339,11 +393,6 @@ class InjectionInterval13:
     def is_rate_controlled_injection(self):
         """Check if the injection is rate controlled."""
         return True
-
-    @property
-    def pressure_schedule(self):
-        """Return the pressure schedule."""
-        return None
 
     @property
     def _initialization_schedule(self):
@@ -406,7 +455,7 @@ class InjectionInterval13:
         return schedule
 
     @property
-    def rate_schedule(self):
+    def schedule(self):
         """Return the rate schedule."""
 
         # Fetch the initialization and rate schedules
