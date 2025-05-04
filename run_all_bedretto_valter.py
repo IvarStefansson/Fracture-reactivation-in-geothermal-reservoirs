@@ -56,7 +56,7 @@ injection = [8, 9, 13]
 
 refinements = [2, 3, 4, 5]
 
-dil = [0.0, 0.05, 0.1]
+dilation_angles = [0.0, 0.05, 0.1]
 
 methods = [
     ("rr-nonlinear", "linesearch"),
@@ -65,13 +65,13 @@ methods = [
     ("ncp-fb", "linesearch"),
 ]
 
-safety = ["", "--safe-nrm", "--safe-aa", "--safe-relaxation"]
+safety_measures = ["", "--safe-nrm", "--safe-aa", "--safe-relaxation"]
 
 linear_solvers = ["pypardiso", "fthm"]
 
-disks = ["", "--small-disks"]
+disks = ["large", "small", "intermediate"]
 
-simple = [(False, False), (True, True)]
+simple = [(False, False), (True, True), (True, False), (False, True)]
 
 linearization = "picard"
 decoupling = False
@@ -84,34 +84,34 @@ if args.parallel:
     pool_instructions = []
 
 for intervals in fractures:
-    for injection_interval in injection:
-        for mesh_refinement in refinements:
-            for dil_ in dil:
-                for formulation, relaxation in methods:
-                    for safety_ in safety:
-                        for linear_solver in linear_solvers:
-                            for disk in disks:
+    for disk in disks:
+        for injection_interval in injection:
+            for mesh_refinement in refinements:
+                for dilation in dilation_angles:
+                    for formulation, relaxation in methods:
+                        for safety_measure in safety_measures:
+                            for linear_solver in linear_solvers:
                                 for simple_flow, tpfa_flow in simple:
                                     instructions = [
                                         sys.executable,
                                         "run_bedretto_valter.py",
                                         "--intervals",
-                                        intervals, 
-                                        "--injection",
+                                        intervals,
+                                        "--disks",
+                                        disk,
+                                        "--injection-interval",
                                         str(injection_interval),
                                         "--mesh-refinement",
                                         str(mesh_refinement),
-                                        "--dil", TODO
-                                        str(dil_),
+                                        "--dilation",
+                                        str(dilation),
                                         "--formulation",
                                         formulation,
                                         "--relaxation",
                                         relaxation,
-                                        safety_,
-                                        TODO
+                                        safety_measure,
                                         "--linear-solver",
                                         linear_solver,
-                                        disks, # TODO
                                         "--simple-flow" if simple_flow else "",
                                         "--tpfa-flow" if tpfa_flow else "",
                                         "--output",
@@ -121,15 +121,17 @@ for intervals in fractures:
                                         # Check if the output file exists
                                         from run_bedretto_valter import generate_case_name
 
-                                        safe_nrm = safety_ == "--safe-nrm"
-                                        safe_aa = safety_ == "--safe-aa"
-                                        safe_relaxation = safety_ == "--safe-relaxation"
+                                        safe_nrm = safety_measure == "--safe-nrm"
+                                        safe_aa = safety_measure == "--safe-aa"
+                                        safe_relaxation = safety_measure == "--safe-relaxation"
 
                                         output_file = (
                                             Path(output)
                                             / generate_case_name(
                                                 intervals,
                                                 injection_interval,
+                                                disks,
+                                                dilation,
                                                 formulation,
                                                 linearization,
                                                 relaxation,
