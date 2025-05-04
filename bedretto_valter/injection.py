@@ -97,7 +97,7 @@ class FlowConstraintWell:
             pp.set_solution_values(
                 name="current_injection_rate",
                 values=np.array(
-                    [self.units.convert_units(current_injection_rate, "m^3/s")]
+                    [self.units.convert_units(current_injection_rate, "m^3*s^-1")]
                 ),
                 data=self.mdg.subdomain_data(sd),
                 iterate_index=0,
