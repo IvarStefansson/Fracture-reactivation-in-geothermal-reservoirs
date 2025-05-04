@@ -21,12 +21,18 @@ disk_radius = 50  # NOTE: 20 results in not-connected fractures
 class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     def set_domain(self) -> None:
         bounding_box = {
-            "xmin": self.units.convert_units(-350, "m"),
-            "xmax": self.units.convert_units(350, "m"),
-            "ymin": self.units.convert_units(-350, "m"),
-            "ymax": self.units.convert_units(350, "m"),
-            "zmin": self.units.convert_units(-1450, "m"),
-            "zmax": self.units.convert_units(-750, "m"),
+            # "xmin": self.units.convert_units(-350, "m"),
+            # "xmax": self.units.convert_units(350, "m"),
+            # "ymin": self.units.convert_units(-350, "m"),
+            # "ymax": self.units.convert_units(350, "m"),
+            # "zmin": self.units.convert_units(-1450, "m"),
+            # "zmax": self.units.convert_units(-750, "m"),
+            "xmin": self.units.convert_units(-200, "m"),
+            "xmax": self.units.convert_units(200, "m"),
+            "ymin": self.units.convert_units(-200, "m"),
+            "ymax": self.units.convert_units(200, "m"),
+            "zmin": self.units.convert_units(-1350, "m"),
+            "zmax": self.units.convert_units(-950, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
@@ -103,8 +109,8 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         interval[13] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(110),
-                major_axis=self.units.convert_units(disk_radius, "m"),
-                minor_axis=self.units.convert_units(disk_radius, "m"),
+                major_axis=self.units.convert_units(disk_radius+40, "m"),
+                minor_axis=self.units.convert_units(disk_radius+40, "m"),
                 major_axis_angle=0,  # TODO?
                 strike_angle=240 * np.pi / 180,  # E-W
                 dip_angle=69 * np.pi / 180,
@@ -124,7 +130,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 minor_axis=self.units.convert_units(disk_radius, "m"),
                 major_axis_angle=0,  # TODO?
                 strike_angle=231 * np.pi / 180,  # E-W
-                dip_angle=50 * np.pi / 180,
+                dip_angle=80 * np.pi / 180,
                 num_points=16,
                 # index=0,
             ),
@@ -176,8 +182,8 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         interval[10] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(165),
-                major_axis=self.units.convert_units(disk_radius, "m"),
-                minor_axis=self.units.convert_units(disk_radius, "m"),
+                major_axis=self.units.convert_units(disk_radius+20, "m"),
+                minor_axis=self.units.convert_units(disk_radius+20, "m"),
                 major_axis_angle=0,
                 strike_angle=231 * np.pi / 180,  # E-W
                 dip_angle=69 * np.pi / 180,
@@ -189,15 +195,14 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         transmissivity[10] = [1.8e-8]
 
         # Interval 9
-        # TODO many more?
         interval[9] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(185),
                 major_axis=self.units.convert_units(disk_radius, "m"),
                 minor_axis=self.units.convert_units(disk_radius, "m"),
                 major_axis_angle=0,
-                strike_angle=227 * np.pi / 180,  # E-W
-                dip_angle=59 * np.pi / 180,
+                strike_angle=239 * np.pi / 180,  # E-W
+                dip_angle=39 * np.pi / 180,
                 num_points=16,
                 # index=0,
             ),
@@ -209,11 +214,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         interval[8] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(208),
-                major_axis=self.units.convert_units(disk_radius, "m"),
-                minor_axis=self.units.convert_units(disk_radius, "m"),
+                major_axis=self.units.convert_units(disk_radius+10, "m"),
+                minor_axis=self.units.convert_units(disk_radius+10, "m"),
                 major_axis_angle=0,  # TODO?
-                strike_angle=231 * np.pi / 180,  # N-S
-                dip_angle=69 * np.pi / 180,
+                strike_angle=230 * np.pi / 180,  # N-S
+                dip_angle=40 * np.pi / 180,
                 num_points=16,
                 # index=0,
             ),
@@ -225,8 +230,8 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         interval[7] = [
             pp.create_elliptic_fracture(
                 center=self.cb1(219),
-                major_axis=self.units.convert_units(disk_radius, "m"),
-                minor_axis=self.units.convert_units(disk_radius, "m"),
+                major_axis=self.units.convert_units(disk_radius-10, "m"),
+                minor_axis=self.units.convert_units(disk_radius-10, "m"),
                 major_axis_angle=0,  # TODO?
                 strike_angle=240 * np.pi / 180,  # N-S
                 dip_angle=60 * np.pi / 180,
@@ -259,12 +264,14 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         self._fractures = []
         self.fracture_transmissivity = []
         self.interval_to_local_fracture_index = {}
-        for local_number, (i, is_active) in enumerate(active_intervals.items()):
+        local_number = 0
+        for i, is_active in active_intervals.items():
             if not is_active:
                 continue
             self._fractures += interval[i]
             self.interval_to_local_fracture_index[i] = local_number
             self.fracture_transmissivity += transmissivity[i]
+            local_number += 1
 
     # This lower part is only used in order to construct vtu files containing the tunnel and the wells
     #    self._fractures = []
