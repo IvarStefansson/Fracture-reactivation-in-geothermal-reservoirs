@@ -13,8 +13,8 @@ from bedretto_valter.physics import (
     solid_parameters,
     injection_schedule,
 )
-from ncp import AdvancedSolverStatistics, AANewtonSolver
-from egc import setup_model, AlternatingDecouplingInTime, AlternatingDecouplingInNewton
+from ncp import AdvancedSolverStatistics, AANewtonSolver, AdaptiveNewtonSolver
+from egc import setup_model, AlternatingDecouplingInTime, AlternatingDecouplingInNewton, SafeNewtonReturnMap
 from bedretto_valter.model import BedrettoValterModel
 
 # Set logging level
@@ -32,6 +32,9 @@ def generate_case_name(
     tpfa_flow,
     decoupling,
     iterative_decoupling,
+    safe_nrm,
+    safe_aa,
+    safe_relaxation,
 ):
     folder = Path(f"bedretto_valter")
     name = f"{formulation.lower()}_{linearization.lower()}"
@@ -47,6 +50,12 @@ def generate_case_name(
         name += "_decoupling"
     if iterative_decoupling:
         name += "_iterative_decoupling"
+    if safe_nrm:
+        name += "_safe_nrm"
+    if safe_aa:
+        name += "_safe_aa"
+    if safe_relaxation:
+        name += "_safe_relaxation"
     return folder / name
 
 
@@ -106,6 +115,21 @@ if __name__ == "__main__":
         "--iterative-decoupling",
         action="store_true",
         help="If provided, alernating decoupling is used",
+    )
+    parser.add_argument(
+        "--safe-nrm",
+        action="store_true",
+        help="If provided, simple flow laws are used",
+    )
+    parser.add_argument(
+        "--safe-aa",
+        action="store_true",
+        help="If provided, simple flow laws are used",
+    )
+    parser.add_argument(
+        "--safe-relaxation",
+        action="store_true",
+        help="If provided, simple flow laws are used",
     )
     parser.add_argument(
         "--output", type=str, default="visualization", help="Output folder."
@@ -168,13 +192,16 @@ if __name__ == "__main__":
             args.tpfa_flow,
             args.decoupling,
             args.iterative_decoupling,
+            args.safe_nrm,
+            args.safe_aa,
+            args.safe_relaxation,
         ),
         "nonlinear_solver_statistics": AdvancedSolverStatistics,
     }
 
     # Solver parameters
     solver_params = {
-        "nonlinear_solver": AANewtonSolver,  # pp.NewtonSolver,
+        "nonlinear_solver": AdaptiveNewtonSolver, #AANewtonSolver,  # pp.NewtonSolver,
         "max_iterations": 200,
         "nl_convergence_tol": 1e-5,
         "nl_convergence_tol_rel": 1e-5,
@@ -199,6 +226,16 @@ if __name__ == "__main__":
         args.relaxation,
         args.linear_solver,
     )
+
+    if args.safe_nrm:
+        class Model(SafeNewtonReturnMap, Model): ...
+        model_params["aa_depth"] = -10000
+
+    if args.safe_aa:
+        model_params["aa_depth"] = -1
+
+    if args.safe_relaxation:
+        model_params["aa_depth"] = -2
 
     if args.decoupling:
         class Model(AlternatingDecouplingInTime, Model): ...
