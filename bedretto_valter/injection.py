@@ -451,7 +451,7 @@ class InjectionInterval13(FlowConstraintWell):
             (10.0 * pp.HOUR, 0),
         ]
         # Convert to m^3/s
-        schedule = [(t, v * conversion_factor_volume) for t, v in schedule]
+        schedule = [(t, v * conversion_factor_volume) for (t, v) in schedule]
         return schedule
 
     @property
