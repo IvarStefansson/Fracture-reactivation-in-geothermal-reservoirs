@@ -60,9 +60,9 @@ def generate_case_name(
     name += f"_mesh{mesh_refinement}"
     name += f"_{linear_solver.lower()}"
     if simple_flow:
-        name += "_simple_flow"
+        name += "_simple"
     if tpfa_flow:
-        name += "_tpfa_flow"
+        name += "_tpfa"
     if decoupling:
         name += "_decoupling"
     if iterative_decoupling:
