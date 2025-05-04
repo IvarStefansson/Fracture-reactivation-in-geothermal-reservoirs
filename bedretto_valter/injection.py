@@ -423,7 +423,7 @@ class InjectionInterval13(FlowConstraintWell):
             (2.25 * pp.HOUR, 130),
             (2.26 * pp.HOUR, 0),
             (2.92 * pp.HOUR, 0),
-            (2.95 * pp.HOUR - 167,),
+            (2.95 * pp.HOUR, - 167,),
             (3.01 * pp.HOUR, -172),
             (3.03 * pp.HOUR, -124),
             (3.09 * pp.HOUR, -97),
