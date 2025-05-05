@@ -10,9 +10,10 @@ projected back to the "boundary" of zero.
 """
 
 import numpy as np
+from alternative_contact_equations import *
 
 
-class NewtonReturnMap:
+class NewtonReturnMap(AlternativeTangentialEquation):
     """Preprocessing step for the Newton solver to perform a return map.
 
     We perform the return map before the nonlinear iteration, since we want
