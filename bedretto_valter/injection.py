@@ -135,12 +135,145 @@ class FlowConstraintWell:
         return fluid_source
 
 
-class InjectionInterval8(PressureConstraintWell):
+class _InjectionInterval8(PressureConstraintWell):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
 
     """
+
+    @property
+    def injection_local_fracture_index(self):
+        return self.interval_to_local_fracture_index[8]
+
+    @property
+    def injection_coordinate(self):
+        """Defined in geometry.py"""
+        return self.fracture_center[8][0]
+
+    @property
+    def is_pressure_controlled_injection(self):
+        """Check if the injection is pressure controlled."""
+        return False
+
+    @property
+    def is_rate_controlled_injection(self):
+        """Check if the injection is rate controlled."""
+        return True
+
+    @property
+    def rate_schedule(self):
+        """Return the empty rate schedule."""
+        return None
+
+    @property
+    def _initialization_schedule(self):
+        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
+
+    @property
+    def _pressure_schedule(self):
+        return [
+            (0 * pp.HOUR, 0),
+            (0.02 * pp.HOUR, 2 * pp.MEGA),
+            (0.2 * pp.HOUR, 2 * pp.MEGA),
+            (0.27 * pp.HOUR, 7.2 * pp.MEGA),
+            (0.32 * pp.HOUR, 6.8 * pp.MEGA),
+            (0.41 * pp.HOUR, 5.8 * pp.MEGA),
+            (0.75 * pp.HOUR, 5.5 * pp.MEGA),
+            (0.77 * pp.HOUR, 12 * pp.MEGA),
+            (0.85 * pp.HOUR, 11 * pp.MEGA),
+            (0.90 * pp.HOUR, 10 * pp.MEGA),
+            (1.16 * pp.HOUR, 10 * pp.MEGA),
+            (1.23 * pp.HOUR, 8.6 * pp.MEGA),
+            (1.24 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.74 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.77 * pp.HOUR, -1.4 * pp.MEGA),
+            (1.87 * pp.HOUR, 0 * pp.MEGA),
+            (2.18 * pp.HOUR, 0.5 * pp.MEGA),
+            (2.19 * pp.HOUR, 2.2 * pp.MEGA),
+            (2.29 * pp.HOUR, 2.1 * pp.MEGA),
+            (2.30 * pp.HOUR, 3.8 * pp.MEGA),
+            (2.40 * pp.HOUR, 4 * pp.MEGA),
+            (2.43 * pp.HOUR, 5 * pp.MEGA),
+            (2.51 * pp.HOUR, 4.6 * pp.MEGA),
+            (2.55 * pp.HOUR, 6 * pp.MEGA),
+            (2.68 * pp.HOUR, 5.4 * pp.MEGA),
+            (2.73 * pp.HOUR, 6.5 * pp.MEGA),
+            (2.85 * pp.HOUR, 6.7 * pp.MEGA),
+            (2.87 * pp.HOUR, 8 * pp.MEGA),
+            (3.02 * pp.HOUR, 8 * pp.MEGA),
+            (3.03 * pp.HOUR, 8.6 * pp.MEGA),
+            (3.08 * pp.HOUR, 8.2 * pp.MEGA),
+            (3.23 * pp.HOUR, 8.1 * pp.MEGA),
+            (3.25 * pp.HOUR, 9.9 * pp.MEGA),
+            (3.29 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.48 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.50 * pp.HOUR, 10.2 * pp.MEGA),
+            (3.55 * pp.HOUR, 9.9 * pp.MEGA),
+            (3.79 * pp.HOUR, 10.8 * pp.MEGA),
+            (4.07 * pp.HOUR, 10.5 * pp.MEGA),
+            (4.30 * pp.HOUR, 7.1 * pp.MEGA),
+            (4.57 * pp.HOUR, 5 * pp.MEGA),
+        ]
+
+    @property
+    def schedule(self):
+        # Fetch the initialization and pressure schedules
+        _initialization_schedule = self._initialization_schedule
+        _pressure_schedule = self._pressure_schedule
+
+        # Merge the initialization schedule with the pressure schedule
+        offset = _initialization_schedule[-1][0]
+        pressure_schedule = _initialization_schedule + [
+            (t + offset, v) for t, v in _pressure_schedule
+        ]
+
+        # Remove duplicate times
+        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
+        return pressure_schedule
+
+
+class InjectionInterval8:
+    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic stimulations
+    at the BedrettoLab. Fig 4a.
+
+    """
+
+    def set_well_network(self) -> None:
+        """Assign CB1 well network."""
+
+        well_coords = [
+            np.vstack((
+                self.cb1(186),
+                self.cb1(216)
+            )).transpose(),
+        ]
+        wells = [pp.Well(wc) for wc in well_coords]
+        self.well_network = pp.WellNetwork3d(domain=self._domain, wells=wells, parameters={"mesh_size": self.params["cell_size"]})
+
+    def bc_values_pressure(self, boundary_grid: pp.BoundaryGrid) -> np.ndarray:
+        pressure = super().bc_values_pressure(boundary_grid)
+
+        # Update injection pressure
+        pressure_schedule = self.schedule
+        current_injection_overpressure = np.interp(
+            self.time_manager.time,
+            [t for t, _ in pressure_schedule],
+            [p for _, p in pressure_schedule],
+            left=0.0,
+        )
+        ic(self.time_manager.time, current_injection_overpressure)
+
+        if boundary_grid.dim == 0 and self.onset:
+            sides = self.domain_boundary_sides(boundary_grid)
+            print(np.count_nonzero(sides.all_bf))
+            pressure[sides.all_bf] = (
+                self.units.convert_units(current_injection_overpressure, "Pa")
+                + self.hydrostatic_pressure(boundary_grid)[sides.all_bf]
+            )
+
+        return pressure
 
     @property
     def injection_local_fracture_index(self):
