@@ -15,22 +15,21 @@ import porepy as pp
 from porepy.applications.md_grids.model_geometries import CubeDomainOrthogonalFractures
 
 
-
 class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     def set_domain(self) -> None:
         bounding_box = {
-            # "xmin": self.units.convert_units(-350, "m"),
-            # "xmax": self.units.convert_units(350, "m"),
-            # "ymin": self.units.convert_units(-350, "m"),
-            # "ymax": self.units.convert_units(350, "m"),
-            # "zmin": self.units.convert_units(-1450, "m"),
-            # "zmax": self.units.convert_units(-750, "m"),
-            "xmin": self.units.convert_units(-200, "m"),
-            "xmax": self.units.convert_units(200, "m"),
-            "ymin": self.units.convert_units(-200, "m"),
-            "ymax": self.units.convert_units(200, "m"),
-            "zmin": self.units.convert_units(-1350, "m"),
-            "zmax": self.units.convert_units(-950, "m"),
+            "xmin": self.units.convert_units(-350, "m"),
+            "xmax": self.units.convert_units(350, "m"),
+            "ymin": self.units.convert_units(-350, "m"),
+            "ymax": self.units.convert_units(350, "m"),
+            "zmin": self.units.convert_units(-1450, "m"),
+            "zmax": self.units.convert_units(-750, "m"),
+            # "xmin": self.units.convert_units(-200, "m"),
+            # "xmax": self.units.convert_units(200, "m"),
+            # "ymin": self.units.convert_units(-200, "m"),
+            # "ymax": self.units.convert_units(200, "m"),
+            # "zmin": self.units.convert_units(-1350, "m"),
+            # "zmax": self.units.convert_units(-950, "m"),
         }
         self._domain = pp.Domain(bounding_box)
 
@@ -107,11 +106,10 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(90),
                 major_axis=self.disk_radius[14],
                 minor_axis=self.disk_radius[14],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=237 * np.pi / 180,  # E-W
                 dip_angle=63 * np.pi / 180,
                 num_points=16,
-                # index=0,
             )
         ]
         center[14] = [self.cb1(90)]
@@ -123,11 +121,10 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(110),
                 major_axis=self.disk_radius[13],
                 minor_axis=self.disk_radius[13],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=240 * np.pi / 180,  # E-W
                 dip_angle=69 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
         ]
         center[13] = [self.cb1(110)]
@@ -135,42 +132,18 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
 
         # Interval 12
         interval[12] = [
-            # NOTE: The interesting one!
             pp.create_elliptic_fracture(
                 center=self.cb1(131),
                 major_axis=self.disk_radius[12],
                 minor_axis=self.disk_radius[12],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=231 * np.pi / 180,  # E-W
                 dip_angle=80 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
-            # pp.create_elliptic_fracture(
-            #    center=self.cb1(133),
-            #    major_axis=self.disk_radius[12],
-            #    minor_axis=self.disk_radius[12],
-            #    major_axis_angle=0,  # TODO?
-            #    strike_angle= 241 * np.pi / 180,  # E-W
-            #    dip_angle=65 * np.pi / 180,
-            #    num_points=16,
-            #    # index=0,
-            # ),
-            # pp.create_elliptic_fracture(
-            #    center=self.cb1(135),
-            #    major_axis=self.disk_radius[12],
-            #    minor_axis=self.disk_radius[12],
-            #    major_axis_angle=0,  # TODO?
-            #    strike_angle= 251 * np.pi / 180,  # E-W
-            #    dip_angle=80 * np.pi / 180,
-            #    num_points=16,
-            #    # index=0,
-            # ),
         ]
         center[12] = [
             self.cb1(131),
-            #            self.cb1(133),
-            #            self.cb1(135),
         ]
         transmissivity[12] = [1.9e-8]
 
@@ -180,11 +153,10 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(140),
                 major_axis=self.disk_radius[11],
                 minor_axis=self.disk_radius[11],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=233 * np.pi / 180,  # E-W
                 dip_angle=58 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
         ]
         center[11] = [self.cb1(140)]
@@ -200,7 +172,6 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 strike_angle=231 * np.pi / 180,  # E-W
                 dip_angle=69 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
         ]
         center[10] = [self.cb1(165)]
@@ -209,17 +180,16 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         # Interval 9
         interval[9] = [
             pp.create_elliptic_fracture(
-                center=self.cb1(185),
+                center=self.cb1(175),
                 major_axis=self.disk_radius[9],
                 minor_axis=self.disk_radius[9],
                 major_axis_angle=0,
                 strike_angle=239 * np.pi / 180,  # E-W
                 dip_angle=39 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
         ]
-        center[9] = [self.cb1(185)]
+        center[9] = [self.cb1(175)]
         transmissivity[9] = [4.1e-8]
 
         # Interval 8
@@ -228,11 +198,10 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(208),
                 major_axis=self.disk_radius[8],
                 minor_axis=self.disk_radius[8],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=230 * np.pi / 180,  # N-S
                 dip_angle=40 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
         ]
         center[8] = [self.cb1(208)]
@@ -244,22 +213,11 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
                 center=self.cb1(219),
                 major_axis=self.disk_radius[7],
                 minor_axis=self.disk_radius[7],
-                major_axis_angle=0,  # TODO?
+                major_axis_angle=0,
                 strike_angle=240 * np.pi / 180,  # N-S
                 dip_angle=60 * np.pi / 180,
                 num_points=16,
-                # index=0,
             ),
-            # pp.create_elliptic_fracture(
-            #    center=self.cb1(221),
-            #    major_axis=disk_radius[7],
-            #    minor_axis=disk_radius[7],
-            #    major_axis_angle=0,  # TODO?
-            #    strike_angle=240 * np.pi / 180,  # N-S
-            #    dip_angle=60 * np.pi / 180,
-            #    num_points=16,
-            #    # index=0,
-            # ),
         ]
         center[7] = [self.cb1(219)]
         transmissivity[7] = [3e-7]
@@ -307,23 +265,17 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
     #    wells = [pp.Well(wc) for wc in well_coords]
     #    self.well_network = pp.WellNetwork3d(domain=self._domain, wells=wells, parameters={"mesh_size": self.params["cell_size"]})
 
+
 class IntermediateDisks:
     @property
     def disk_radius(self) -> dict:
-        disk_radius = 20
-        return {
-            14: self.units.convert_units(disk_radius, "m"),
-            13: self.units.convert_units(disk_radius + 40, "m"),
-            12: self.units.convert_units(disk_radius, "m"),
-            11: self.units.convert_units(disk_radius, "m"),
-            10: self.units.convert_units(disk_radius + 20, "m"),
-            9: self.units.convert_units(disk_radius, "m"),
-            8: self.units.convert_units(disk_radius + 10, "m"),
-            7: self.units.convert_units(disk_radius - 10, "m"),
-        }
-    
+        disk_radius = super().disk_radius
+        disk_radius[10] -= 30
+        disk_radius[7] -= 25
+        return disk_radius
+
+
 class SmallDisks:
-    
     @property
     def disk_radius(self) -> dict:
         disk_radius = 20
