@@ -29,6 +29,8 @@ solid_parameters: dict[str, float] = {
     "lame_lambda": 19.73 * pp.GIGA,  # X.Ma et al.
     "density": 2653,  # X.Ma et al.
     "friction_coefficient": 0.6,  # X.Ma et al.
+    # Well
+    "well_radius": 0.10,  # m
 }
 
 numerics_parameters: dict[str, float] = {
