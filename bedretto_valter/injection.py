@@ -20,7 +20,7 @@ class PressureConstraintWell:
             [p for _, p in pressure_schedule],
             left=0.0,
         )
-        ic(self.time_manager.time, current_injection_overpressure)
+        #ic(self.time_manager.time, current_injection_overpressure)
 
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
@@ -91,7 +91,7 @@ class FlowConstraintWell:
             [r for _, r in rate_schedule],
             left=0.0,
         )
-        ic(self.time_manager.time, current_injection_rate)
+        #ic(self.time_manager.time, current_injection_rate)
 
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
@@ -263,11 +263,11 @@ class InjectionInterval8:
             [p for _, p in pressure_schedule],
             left=0.0,
         )
-        ic(self.time_manager.time, current_injection_overpressure)
+        #ic(self.time_manager.time, current_injection_overpressure)
 
         if boundary_grid.dim == 0 and self.onset:
             sides = self.domain_boundary_sides(boundary_grid)
-            print(np.count_nonzero(sides.all_bf))
+            #print(np.count_nonzero(sides.all_bf))
             pressure[sides.all_bf] = (
                 self.units.convert_units(current_injection_overpressure, "Pa")
                 + self.hydrostatic_pressure(boundary_grid)[sides.all_bf]
