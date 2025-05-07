@@ -23,7 +23,9 @@ from bedretto_valter.model import BedrettoValterModel
 
 from bedretto_valter.injection import (
     InjectionInterval8,
+    WellInjectionInterval8,
     InjectionInterval9,
+    WellInjectionInterval9,
     InjectionInterval13,
 )
 
@@ -98,13 +100,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--relaxation",
         type=str,
-        default="None",
+        default="linesearch",
         help="Relaxation method (None [default], Picard, Newton).",
     )
     parser.add_argument(
         "--linear-solver",
         type=str,
-        default="scipy_sparse",
+        default="pypardiso",
         help="Linear solver to use. (scipy_sparse [default], pypardiso, fthm).",
     )
     parser.add_argument(
@@ -162,8 +164,8 @@ if __name__ == "__main__":
     # Injection interval
     parser.add_argument(
         "--injection-interval",
-        type=int,
-        default=9,
+        type=str,
+        default="8",
         help="Injection interval to use for the simulation.",
     )
     # Small disks
@@ -177,7 +179,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--dilation",
         type=float,
-        default=0.0,
+        default=0.05,
         help="Dilation angle to use for the simulation.",
     )
 
@@ -201,15 +203,22 @@ if __name__ == "__main__":
         5: 1,
     }
 
-    if args.injection_interval == 8:
+    if args.injection_interval == "8":
 
         class Injection(InjectionInterval8): ...
-    elif args.injection_interval == 9:
+    elif args.injection_interval == "9":
 
         class Injection(InjectionInterval9): ...
     elif args.injection_interval == 13:
 
         class Injection(InjectionInterval13): ...
+    elif args.injection_interval == "8w":
+
+        class Injection(WellInjectionInterval8): ...
+
+    elif args.injection_interval == "9w":
+
+        class Injection(WellInjectionInterval9): ...
     else:
         raise ValueError(
             f"Injection interval {args.injection_interval} not supported. "
@@ -231,6 +240,7 @@ if __name__ == "__main__":
         "cell_size_fracture": cell_size_fracture[
             args.mesh_refinement
         ],  # Size of the cells in the fractures
+        # "fracture_network_tolerance": 0.5,
         # Time
         "time_manager": pp.TimeManager(
             schedule=[t for t, _ in Injection().schedule],
@@ -279,7 +289,7 @@ if __name__ == "__main__":
     solver_params = {
         "nonlinear_solver": AdaptiveNewtonSolver,
         "aa_depth": 0,  # Standard Newton, but stops upon cycling
-        "max_iterations": 200,
+        "max_iterations": 50,
         "nl_convergence_tol": 1e-5,
         "nl_convergence_tol_rel": 1e-5,
         "nl_convergence_tol_res": 1e-5,
@@ -307,8 +317,10 @@ if __name__ == "__main__":
     if args.disks == "large":
         ...
     elif args.disks == "small":
+
         class Model(SmallDisks, Model): ...
     elif args.disks == "intermediate":
+
         class Model(IntermediateDisks, Model): ...
     else:
         raise ValueError(
