@@ -244,8 +244,8 @@ if __name__ == "__main__":
         # Time
         "time_manager": pp.TimeManager(
             schedule=[t for t, _ in Injection().schedule],
-            dt_init=0.5 * pp.HOUR,
-            dt_min_max=(10 * pp.SECOND, pp.DAY),
+            dt_init=0.1 * pp.HOUR,
+            dt_min_max=(10 * pp.SECOND, 0.1 * pp.HOUR),
             constant_dt=False,
             print_info=True,
             iter_optimal_range=(4, 20),
