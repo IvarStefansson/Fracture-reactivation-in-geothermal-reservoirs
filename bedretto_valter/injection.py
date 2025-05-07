@@ -20,7 +20,7 @@ class PressureConstraintWell:
             [p for _, p in pressure_schedule],
             left=0.0,
         )
-        #ic(self.time_manager.time, current_injection_overpressure)
+        # ic(self.time_manager.time, current_injection_overpressure)
 
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
@@ -42,14 +42,18 @@ class PressureConstraintWell:
             return std_eq
 
         # Identify pressurized fractures
-        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[self.injection_local_fracture_index]
+        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[
+            self.injection_local_fracture_index
+        ]
 
         # Define indicator for injection cell
         sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
         for i, sd in enumerate(subdomains):
             if sd == sd_pressurized:
-                injection_cell = sd.closest_cell(self.injection_coordinate.reshape((-1,1)))
-                sd_indicator[i][injection_cell] = 1.
+                injection_cell = sd.closest_cell(
+                    self.injection_coordinate.reshape((-1, 1))
+                )
+                sd_indicator[i][injection_cell] = 1.0
         indicator = np.concatenate(sd_indicator)
         reverse_indicator = 1.0 - indicator
 
@@ -91,7 +95,7 @@ class FlowConstraintWell:
             [r for _, r in rate_schedule],
             left=0.0,
         )
-        #ic(self.time_manager.time, current_injection_rate)
+        # ic(self.time_manager.time, current_injection_rate)
 
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
@@ -112,13 +116,17 @@ class FlowConstraintWell:
             return std_fluid_source
 
         # Identify pressurized fractures
-        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[self.injection_local_fracture_index]
+        sd_pressurized = self.mdg.subdomains(dim=self.nd - 1)[
+            self.injection_local_fracture_index
+        ]
 
         # Define indicator for injection cell
         sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
         for i, sd in enumerate(subdomains):
             if sd == sd_pressurized:
-                injection_cell = sd.closest_cell(self.injection_coordinate.reshape((-1,1)))
+                injection_cell = sd.closest_cell(
+                    self.injection_coordinate.reshape((-1, 1))
+                )
                 sd_indicator[i][injection_cell] = 1
         indicator = np.concatenate(sd_indicator)
 
@@ -135,7 +143,7 @@ class FlowConstraintWell:
         return fluid_source
 
 
-class _InjectionInterval8(PressureConstraintWell):
+class InjectionInterval8(PressureConstraintWell):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -233,7 +241,7 @@ class _InjectionInterval8(PressureConstraintWell):
         return pressure_schedule
 
 
-class InjectionInterval8:
+class WellInjectionInterval8:
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -244,60 +252,38 @@ class InjectionInterval8:
         """Assign CB1 well network."""
 
         well_coords = [
-            np.vstack((
-                self.cb1(186),
-                self.cb1(216)
-            )).transpose(),
+            np.vstack((self.cb1(186), self.cb1(216))).transpose(),
         ]
         wells = [pp.Well(wc) for wc in well_coords]
-        self.well_network = pp.WellNetwork3d(domain=self._domain, wells=wells, parameters={"mesh_size": self.params["cell_size"]})
-
-    def bc_values_pressure(self, boundary_grid: pp.BoundaryGrid) -> np.ndarray:
-        pressure = super().bc_values_pressure(boundary_grid)
-
-        # Update injection pressure
-        pressure_schedule = self.schedule
-        current_injection_overpressure = np.interp(
-            self.time_manager.time,
-            [t for t, _ in pressure_schedule],
-            [p for _, p in pressure_schedule],
-            left=0.0,
+        self.well_network = pp.WellNetwork3d(
+            domain=self._domain,
+            wells=wells,
+            parameters={"mesh_size": self.params["cell_size"]},
         )
-        #ic(self.time_manager.time, current_injection_overpressure)
 
-        if boundary_grid.dim == 0 and self.onset:
-            sides = self.domain_boundary_sides(boundary_grid)
-            #print(np.count_nonzero(sides.all_bf))
-            pressure[sides.all_bf] = (
-                self.units.convert_units(current_injection_overpressure, "Pa")
-                + self.hydrostatic_pressure(boundary_grid)[sides.all_bf]
-            )
-
-        return pressure
-
-    @property
-    def injection_local_fracture_index(self):
-        return self.interval_to_local_fracture_index[8]
-
-    @property
-    def injection_coordinate(self):
-        """Defined in geometry.py"""
-        return self.fracture_center[8][0]
-
-    @property
-    def is_pressure_controlled_injection(self):
-        """Check if the injection is pressure controlled."""
-        return False
-
-    @property
-    def is_rate_controlled_injection(self):
-        """Check if the injection is rate controlled."""
-        return True
-
-    @property
-    def rate_schedule(self):
-        """Return the empty rate schedule."""
-        return None
+    #    @property
+    #    def injection_local_fracture_index(self):
+    #        return self.interval_to_local_fracture_index[8]
+    #
+    #    @property
+    #    def injection_coordinate(self):
+    #        """Defined in geometry.py"""
+    #        return self.fracture_center[8][0]
+    #
+    #    @property
+    #    def is_pressure_controlled_injection(self):
+    #        """Check if the injection is pressure controlled."""
+    #        return False
+    #
+    #    @property
+    #    def is_rate_controlled_injection(self):
+    #        """Check if the injection is rate controlled."""
+    #        return True
+    #
+    #    @property
+    #    def rate_schedule(self):
+    #        """Return the empty rate schedule."""
+    #        return None
 
     @property
     def _initialization_schedule(self):
@@ -349,6 +335,8 @@ class InjectionInterval8:
             (4.57 * pp.HOUR, 5 * pp.MEGA),
         ]
 
+    # General
+
     @property
     def schedule(self):
         # Fetch the initialization and pressure schedules
@@ -364,6 +352,154 @@ class InjectionInterval8:
         # Remove duplicate times
         pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
         return pressure_schedule
+
+    def update_time_dependent_ad_arrays(self) -> None:
+        """Set current injection pressure."""
+        super().update_time_dependent_ad_arrays()
+
+        # Update injection pressure
+        pressure_schedule = self.schedule
+        current_injection_overpressure = np.interp(
+            self.time_manager.time,
+            [t for t, _ in pressure_schedule],
+            [p for _, p in pressure_schedule],
+            left=0.0,
+        )
+        ic(self.time_manager.time, current_injection_overpressure)
+
+        for sd in self.mdg.subdomains(return_data=False):
+            pp.set_solution_values(
+                name="current_injection_overpressure",
+                values=np.array(
+                    [self.units.convert_units(current_injection_overpressure, "Pa")]
+                ),
+                data=self.mdg.subdomain_data(sd),
+                iterate_index=0,
+            )
+
+    def well_flux_equation(self, interfaces: list[pp.MortarGrid]) -> pp.ad.Operator:
+        """Equation relating the well flux to the difference between well and formation
+        pressure.
+
+        For details, see Lie: An introduction to reservoir simulation using MATLAB/GNU
+        Octave, 2019, Section 4.3.
+
+        Parameters:
+            interfaces: List of interfaces where the well fluxes are defined.
+
+        Returns:
+            Cell-wise well flux operator, units [kg * m^{nd-1} * s^-2].
+
+        """
+
+        subdomains = self.interfaces_to_subdomains(interfaces)
+        projection = pp.ad.MortarProjections(self.mdg, subdomains, interfaces)
+        r_w = self.well_radius(subdomains)
+        skin_factor = self.skin_factor(interfaces)
+        r_e = self.equivalent_well_radius(subdomains)
+
+        f_log = pp.ad.Function(pp.ad.functions.log, "log_function_Piecmann")
+
+        # We assume isotropic permeability and extract xx component.
+        e_i = self.e_i(subdomains, i=0, dim=9).T
+
+        # To get a transmissivity, we multiply the permeability with the length of the
+        # well within one cell. For a 0d-2d coupling, this will be the aperture of the
+        # 2d fracture cell; in practice the number is obtained by multiplying with the
+        # specific volume of the mortar cell (which will incorporate the specific volume
+        # of the higher-dimensional neighbor, that is, the fracture). For a 1d-3d
+        # coupling, we will need the length of the well within the 3d cell (see the MRST
+        # book, p.128, for comments regarding deviated wells). Again, this could be
+        # obtained by a volume integral over the mortar cell; however, as 1d-3d
+        # couplings have not yet been implemented, we will raise an error in this case.
+        if any([sd.dim == 3 for sd in subdomains]):
+            raise NotImplementedError(
+                "The 1d-3d coupling has not yet been implemented. "
+            )
+        elif any([sd.dim == 1 for sd in subdomains]):
+            # This is a 1d-2d (or 1d-1d) coupling, for which the Peaceman model is
+            # not applicable.
+            # TODO: Revisit when we implement 1d-3d coupling.
+            raise ValueError("The Peaceman model assumes a coupling of codimension 2")
+
+        isotropic_permeability = e_i @ self.permeability(subdomains)
+
+        well_index = self.volume_integral(
+            pp.ad.Scalar(2 * np.pi)
+            * projection.primary_to_mortar_avg()
+            @ (isotropic_permeability / (f_log(r_e / r_w) + skin_factor)),
+            interfaces,
+            1,
+        )
+        current_injection_overpressure = pp.ad.TimeDependentDenseArray(
+            "current_injection_overpressure", [self.mdg.subdomains()[0]]
+        )
+        hydrostatic_pressure = pp.ad.TimeDependentDenseArray(
+            "hydrostatic_pressure", subdomains
+        )
+        ones_array = pp.ad.DenseArray(
+            np.ones(np.sum(sd.num_cells for sd in subdomains))
+        )
+        eq: pp.ad.Operator = self.well_flux(interfaces) - well_index * (
+            projection.primary_to_mortar_avg() @ self.pressure(subdomains)
+            - projection.secondary_to_mortar_avg()
+            @ (current_injection_overpressure * ones_array)
+            - projection.secondary_to_mortar_avg() @ (hydrostatic_pressure * ones_array)
+        )
+        eq.set_name("well_flux_equation")
+        return eq
+
+
+class WellInjectionInterval9(WellInjectionInterval8):
+    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic stimulations
+    at the BedrettoLab. Fig 4a.
+
+    """
+
+    def set_well_network(self) -> None:
+        """Assign CB1 well network."""
+
+        well_coords = [
+            np.vstack((self.cb1(175), self.cb1(195))).transpose(),
+        ]
+        wells = [pp.Well(wc) for wc in well_coords]
+        self.well_network = pp.WellNetwork3d(
+            domain=self._domain,
+            wells=wells,
+            parameters={"mesh_size": self.params["cell_size"]},
+        )
+
+    @property
+    def _pressure_schedule(self):
+        return [
+            (0.00 * pp.HOUR, 0),
+            (0.08 * pp.HOUR, 0 * pp.MEGA),
+            (0.09 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.26 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.27 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.46 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.47 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.69 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.70 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.88 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.90 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.10 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.11 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.32 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.33 * pp.HOUR, 11 * pp.MEGA),
+            (1.56 * pp.HOUR, 11 * pp.MEGA),
+            (1.57 * pp.HOUR, 12 * pp.MEGA),
+            (1.95 * pp.HOUR, 12 * pp.MEGA),
+            (1.99 * pp.HOUR, 9 * pp.MEGA),
+            (2.06 * pp.HOUR, 7 * pp.MEGA),
+            (2.15 * pp.HOUR, 5.8 * pp.MEGA),
+            (2.17 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.88 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.94 * pp.HOUR, -0.7 * pp.MEGA),
+            (4.18 * pp.HOUR, 0.02 * pp.MEGA),
+            (4.36 * pp.HOUR, 0 * pp.MEGA),
+        ]
 
 
 class InjectionInterval9(PressureConstraintWell):
@@ -556,7 +692,10 @@ class InjectionInterval13(FlowConstraintWell):
             (2.25 * pp.HOUR, 130),
             (2.26 * pp.HOUR, 0),
             (2.92 * pp.HOUR, 0),
-            (2.95 * pp.HOUR, - 167,),
+            (
+                2.95 * pp.HOUR,
+                -167,
+            ),
             (3.01 * pp.HOUR, -172),
             (3.03 * pp.HOUR, -124),
             (3.09 * pp.HOUR, -97),
