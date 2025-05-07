@@ -3,11 +3,6 @@ import porepy as pp
 import egc
 from icecream import ic
 from porepy.applications.material_values.fluid_values import water
-from .injection import (
-    InjectionInterval8,
-    InjectionInterval9,
-    InjectionInterval13,
-)
 
 # Based on publications on BedrettoLab
 
@@ -89,10 +84,6 @@ class HorizontalBackgroundStress(egc.BackgroundStress):
             s_h[i, j] = scaling[i, j] * s_v
         return s_h
 
-#class Injection(InjectionInterval8):
-class Injection(InjectionInterval9):
-#class Injection(InjectionInterval13):
-    ...
 
 class BedrettoValter_Physics(
     egc.HydrostaticPressureInitialCondition,
@@ -102,7 +93,6 @@ class BedrettoValter_Physics(
     egc.LithostaticPressureBC,
     egc.HydrostaticPressureInitialization,
     #egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
-    Injection,
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
     egc.NormalPermeabilityFromHigherDimension,
