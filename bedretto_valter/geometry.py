@@ -88,7 +88,7 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
             14: self.units.convert_units(disk_radius, "m"),
             13: self.units.convert_units(disk_radius-20, "m"),
             12: self.units.convert_units(disk_radius-30, "m"),
-            11: self.units.convert_units(disk_radius-20, "m"),
+            11: self.units.convert_units(disk_radius-25, "m"),
             10: self.units.convert_units(disk_radius + 10, "m"),
             9: self.units.convert_units(disk_radius, "m"),
             8: self.units.convert_units(disk_radius, "m"),
