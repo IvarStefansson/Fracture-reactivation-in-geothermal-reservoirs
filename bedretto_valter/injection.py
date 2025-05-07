@@ -279,45 +279,7 @@ class FlowConstraintWell:
 
         return fluid_source
 
-
-class InjectionInterval8(InjectionSchedule8, PressureConstraintWell):
-    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
-    fractured crystalline rock volume during multi-stage hydraulic stimulations
-    at the BedrettoLab. Fig 4a.
-
-    """
-
-    @property
-    def injection_local_fracture_index(self):
-        return self.interval_to_local_fracture_index[8]
-
-    @property
-    def injection_coordinate(self):
-        """Defined in geometry.py"""
-        return self.fracture_center[8][0]
-
-
-class WellInjectionInterval8(InjectionSchedule8):
-    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
-    fractured crystalline rock volume during multi-stage hydraulic stimulations
-    at the BedrettoLab. Fig 4a.
-
-    """
-
-    def set_well_network(self) -> None:
-        """Assign CB1 well network."""
-
-        well_coords = [
-            np.vstack((self.cb1(186), self.cb1(216))).transpose(),
-        ]
-        wells = [pp.Well(wc) for wc in well_coords]
-        self.well_network = pp.WellNetwork3d(
-            domain=self._domain,
-            wells=wells,
-            parameters={"mesh_size": self.params["cell_size"]},
-        )
-
-    # General
+class PressureConstraintWell_1D:
 
     def update_time_dependent_ad_arrays(self) -> None:
         """Set current injection pressure."""
@@ -343,77 +305,85 @@ class WellInjectionInterval8(InjectionSchedule8):
                 iterate_index=0,
             )
 
-    def well_flux_equation(self, interfaces: list[pp.MortarGrid]) -> pp.ad.Operator:
-        """Equation relating the well flux to the difference between well and formation
-        pressure.
+    def mass_balance_equation(self, subdomains: list[pp.Grid]) -> pp.ad.Operator:
+        # Fetch standard mass balance equation
+        std_eq = super().mass_balance_equation(subdomains)
 
-        For details, see Lie: An introduction to reservoir simulation using MATLAB/GNU
-        Octave, 2019, Section 4.3.
+        # Pick fractures
+        codim2_fracture_sds = [sd for sd in subdomains if sd.dim == self.nd - 2]
+        if len(codim2_fracture_sds) == 0:
+            return std_eq
 
-        Parameters:
-            interfaces: List of interfaces where the well fluxes are defined.
+        # Identify well
+        sd_pressurized = self.mdg.subdomains(dim=self.nd - 2)[-1]
 
-        Returns:
-            Cell-wise well flux operator, units [kg * m^{nd-1} * s^-2].
+        # Define indicator for injection cell
+        sd_indicator = [np.zeros(sd.num_cells) for sd in subdomains]
+        for i, sd in enumerate(subdomains):
+            if sd == sd_pressurized:
+                sd_indicator[i][:] = 1.0
+        indicator = np.concatenate(sd_indicator)
+        reverse_indicator = 1.0 - indicator
 
-        """
-
-        subdomains = self.interfaces_to_subdomains(interfaces)
-        projection = pp.ad.MortarProjections(self.mdg, subdomains, interfaces)
-        r_w = self.well_radius(subdomains)
-        skin_factor = self.skin_factor(interfaces)
-        r_e = self.equivalent_well_radius(subdomains)
-
-        f_log = pp.ad.Function(pp.ad.functions.log, "log_function_Piecmann")
-
-        # We assume isotropic permeability and extract xx component.
-        e_i = self.e_i(subdomains, i=0, dim=9).T
-
-        # To get a transmissivity, we multiply the permeability with the length of the
-        # well within one cell. For a 0d-2d coupling, this will be the aperture of the
-        # 2d fracture cell; in practice the number is obtained by multiplying with the
-        # specific volume of the mortar cell (which will incorporate the specific volume
-        # of the higher-dimensional neighbor, that is, the fracture). For a 1d-3d
-        # coupling, we will need the length of the well within the 3d cell (see the MRST
-        # book, p.128, for comments regarding deviated wells). Again, this could be
-        # obtained by a volume integral over the mortar cell; however, as 1d-3d
-        # couplings have not yet been implemented, we will raise an error in this case.
-        if any([sd.dim == 3 for sd in subdomains]):
-            raise NotImplementedError(
-                "The 1d-3d coupling has not yet been implemented. "
-            )
-        elif any([sd.dim == 1 for sd in subdomains]):
-            # This is a 1d-2d (or 1d-1d) coupling, for which the Peaceman model is
-            # not applicable.
-            # TODO: Revisit when we implement 1d-3d coupling.
-            raise ValueError("The Peaceman model assumes a coupling of codimension 2")
-
-        isotropic_permeability = e_i @ self.permeability(subdomains)
-
-        well_index = self.volume_integral(
-            pp.ad.Scalar(2 * np.pi)
-            * projection.primary_to_mortar_avg()
-            @ (isotropic_permeability / (f_log(r_e / r_w) + skin_factor)),
-            interfaces,
-            1,
-        )
+        # Fetch pressure values and fix the pressure constraint
         current_injection_overpressure = pp.ad.TimeDependentDenseArray(
             "current_injection_overpressure", [self.mdg.subdomains()[0]]
         )
         hydrostatic_pressure = pp.ad.TimeDependentDenseArray(
             "hydrostatic_pressure", subdomains
         )
-        ones_array = pp.ad.DenseArray(
-            np.ones(np.sum(sd.num_cells for sd in subdomains))
+        constrained_eq = (
+            self.pressure(subdomains)
+            - current_injection_overpressure
+            - hydrostatic_pressure
         )
-        eq: pp.ad.Operator = self.well_flux(interfaces) - well_index * (
-            projection.primary_to_mortar_avg() @ self.pressure(subdomains)
-            - projection.secondary_to_mortar_avg()
-            @ (current_injection_overpressure * ones_array)
-            - projection.secondary_to_mortar_avg() @ (hydrostatic_pressure * ones_array)
+
+        # Create the equation with the pressure constraint through convex combination
+        eq_with_pressure_constraint = (
+            pp.ad.DenseArray(reverse_indicator) * std_eq
+            + pp.ad.DenseArray(indicator) * constrained_eq
         )
-        eq.set_name("well_flux_equation")
-        return eq
+        eq_with_pressure_constraint.set_name(std_eq.name)
+
+        return eq_with_pressure_constraint
+
+
+class InjectionInterval8(InjectionSchedule8, PressureConstraintWell):
+    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic stimulations
+    at the BedrettoLab. Fig 4a.
+
+    """
+
+    @property
+    def injection_local_fracture_index(self):
+        return self.interval_to_local_fracture_index[8]
+
+    @property
+    def injection_coordinate(self):
+        """Defined in geometry.py"""
+        return self.fracture_center[8][0]
+
+
+class WellInjectionInterval8(InjectionSchedule8, PressureConstraintWell_1D):
+    """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
+    fractured crystalline rock volume during multi-stage hydraulic stimulations
+    at the BedrettoLab. Fig 4a.
+
+    """
+
+    def set_well_network(self) -> None:
+        """Assign CB1 well network."""
+
+        well_coords = [
+            np.vstack((self.cb1(186), self.cb1(216))).transpose(),
+        ]
+        wells = [pp.Well(wc) for wc in well_coords]
+        self.well_network = pp.WellNetwork3d(
+            domain=self._domain,
+            wells=wells,
+            parameters={"mesh_size": self.params["cell_size"]},
+        )
 
 
 class InjectionInterval9(InjectionSchedule9, PressureConstraintWell):
@@ -429,7 +399,7 @@ class InjectionInterval9(InjectionSchedule9, PressureConstraintWell):
         return self.fracture_center[9][0]
 
 
-class WellInjectionInterval9(InjectionSchedule9, WellInjectionInterval8):
+class WellInjectionInterval9(InjectionSchedule9, PressureConstraintWell_1D):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
