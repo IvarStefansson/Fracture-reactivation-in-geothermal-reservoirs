@@ -261,30 +261,6 @@ class WellInjectionInterval8:
             parameters={"mesh_size": self.params["cell_size"]},
         )
 
-    #    @property
-    #    def injection_local_fracture_index(self):
-    #        return self.interval_to_local_fracture_index[8]
-    #
-    #    @property
-    #    def injection_coordinate(self):
-    #        """Defined in geometry.py"""
-    #        return self.fracture_center[8][0]
-    #
-    #    @property
-    #    def is_pressure_controlled_injection(self):
-    #        """Check if the injection is pressure controlled."""
-    #        return False
-    #
-    #    @property
-    #    def is_rate_controlled_injection(self):
-    #        """Check if the injection is rate controlled."""
-    #        return True
-    #
-    #    @property
-    #    def rate_schedule(self):
-    #        """Return the empty rate schedule."""
-    #        return None
-
     @property
     def _initialization_schedule(self):
         return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
@@ -533,88 +509,34 @@ class InjectionInterval9(PressureConstraintWell):
     @property
     def _pressure_schedule(self):
         return [
-            (0 * pp.HOUR, 0),
-            (0.05 * pp.HOUR, 2 * pp.MEGA),
-            (0.2 * pp.HOUR, 2 * pp.MEGA),
-            (0.25 * pp.HOUR, 4 * pp.MEGA),
-            (0.4 * pp.HOUR, 4 * pp.MEGA),
-            (0.45 * pp.HOUR, 6 * pp.MEGA),
-            (0.6 * pp.HOUR, 6 * pp.MEGA),
-            (0.65 * pp.HOUR, 8 * pp.MEGA),
-            (0.8 * pp.HOUR, 8 * pp.MEGA),
-            (0.85 * pp.HOUR, 10 * pp.MEGA),
-            (1.0 * pp.HOUR, 10 * pp.MEGA),
-            (1.05 * pp.HOUR, 12 * pp.MEGA),
-            (1.2 * pp.HOUR, 12 * pp.MEGA),
-            (1.25 * pp.HOUR, 14 * pp.MEGA),
-            (1.4 * pp.HOUR, 14 * pp.MEGA),
-            (1.45 * pp.HOUR, 12 * pp.MEGA),
-            (1.6 * pp.HOUR, 12 * pp.MEGA),
-            (1.65 * pp.HOUR, 14 * pp.MEGA),
-            (1.8 * pp.HOUR, 14 * pp.MEGA),
-            (1.85 * pp.HOUR, 16 * pp.MEGA),
-            (2.0 * pp.HOUR, 16 * pp.MEGA),
-            (2.05 * pp.HOUR, 20 * pp.MEGA),
-            (2.2 * pp.HOUR, 20 * pp.MEGA),
-            (2.25 * pp.HOUR, 16 * pp.MEGA),
-            (2.4 * pp.HOUR, 8 * pp.MEGA),
-            (2.45 * pp.HOUR, 20 * pp.MEGA),
-            (2.6 * pp.HOUR, 20 * pp.MEGA),
-            (2.65 * pp.HOUR, 16 * pp.MEGA),
-            (2.8 * pp.HOUR, 10 * pp.MEGA),
-            (2.85 * pp.HOUR, 20 * pp.MEGA),
-            (3.0 * pp.HOUR, 20 * pp.MEGA),
-            (3.05 * pp.HOUR, 16 * pp.MEGA),
-            (3.2 * pp.HOUR, 11 * pp.MEGA),
-            (3.25 * pp.HOUR, 20 * pp.MEGA),
-            (3.4 * pp.HOUR, 20 * pp.MEGA),
-            (3.45 * pp.HOUR, 16 * pp.MEGA),
-            (3.6 * pp.HOUR, 12 * pp.MEGA),
-            (3.65 * pp.HOUR, 20 * pp.MEGA),
-            (3.8 * pp.HOUR, 20 * pp.MEGA),
-            (3.85 * pp.HOUR, 16 * pp.MEGA),
-            (4.0 * pp.HOUR, 12 * pp.MEGA),
-            (4.05 * pp.HOUR, 20 * pp.MEGA),
-            (4.2 * pp.HOUR, 20 * pp.MEGA),
-            (4.25 * pp.HOUR, 16 * pp.MEGA),
-            (4.4 * pp.HOUR, 12 * pp.MEGA),
-            (4.45 * pp.HOUR, 20 * pp.MEGA),
-            (4.6 * pp.HOUR, 20 * pp.MEGA),
-            (4.65 * pp.HOUR, 16 * pp.MEGA),
-            (4.8 * pp.HOUR, 12 * pp.MEGA),
-            (4.85 * pp.HOUR, 20 * pp.MEGA),
-            (5.0 * pp.HOUR, 20 * pp.MEGA),
-            (5.05 * pp.HOUR, 16 * pp.MEGA),
-            (5.2 * pp.HOUR, 12 * pp.MEGA),
-            (5.25 * pp.HOUR, 20 * pp.MEGA),
-            (5.4 * pp.HOUR, 20 * pp.MEGA),
-            (5.45 * pp.HOUR, 16 * pp.MEGA),
-            (5.6 * pp.HOUR, 12 * pp.MEGA),
-            (5.65 * pp.HOUR, 20 * pp.MEGA),
-            (5.8 * pp.HOUR, 20 * pp.MEGA),
-            (5.85 * pp.HOUR, 16 * pp.MEGA),
-            (6.0 * pp.HOUR, 12 * pp.MEGA),
-            (6.05 * pp.HOUR, 20 * pp.MEGA),
-            (6.2 * pp.HOUR, 20 * pp.MEGA),
-            (6.25 * pp.HOUR, 16 * pp.MEGA),
-            (6.4 * pp.HOUR, 12 * pp.MEGA),
-            (6.45 * pp.HOUR, 20 * pp.MEGA),
-            (6.6 * pp.HOUR, 20 * pp.MEGA),
-            (6.65 * pp.HOUR, 16 * pp.MEGA),
-            (6.8 * pp.HOUR, 12 * pp.MEGA),
-            (6.85 * pp.HOUR, 20 * pp.MEGA),
-            (7.0 * pp.HOUR, 20 * pp.MEGA),
-            (7.05 * pp.HOUR, 16 * pp.MEGA),
-            (7.2 * pp.HOUR, 12 * pp.MEGA),
-            (7.25 * pp.HOUR, 20 * pp.MEGA),
-            (7.4 * pp.HOUR, 20 * pp.MEGA),
-            (7.45 * pp.HOUR, 16 * pp.MEGA),
-            (7.6 * pp.HOUR, 12 * pp.MEGA),
-            (7.65 * pp.HOUR, 20 * pp.MEGA),
-            (7.8 * pp.HOUR, 20 * pp.MEGA),
-            (7.85 * pp.HOUR, 16 * pp.MEGA),
-            (8.0 * pp.HOUR, 12 * pp.MEGA),
+            (0.00 * pp.HOUR, 0),
+            (0.08 * pp.HOUR, 0 * pp.MEGA),
+            (0.09 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.26 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.27 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.46 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.47 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.69 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.70 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.88 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.90 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.10 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.11 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.32 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.33 * pp.HOUR, 11 * pp.MEGA),
+            (1.56 * pp.HOUR, 11 * pp.MEGA),
+            (1.57 * pp.HOUR, 12 * pp.MEGA),
+            (1.95 * pp.HOUR, 12 * pp.MEGA),
+            (1.99 * pp.HOUR, 9 * pp.MEGA),
+            (2.06 * pp.HOUR, 7 * pp.MEGA),
+            (2.15 * pp.HOUR, 5.8 * pp.MEGA),
+            (2.17 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.88 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.94 * pp.HOUR, -0.7 * pp.MEGA),
+            (4.18 * pp.HOUR, 0.02 * pp.MEGA),
+            (4.36 * pp.HOUR, 0 * pp.MEGA),
         ]
+
 
     @property
     def schedule(self):
