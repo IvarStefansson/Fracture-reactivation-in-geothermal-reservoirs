@@ -280,7 +280,7 @@ class IntermediateDisks:
     @property
     def disk_radius(self) -> dict:
         disk_radius = super().disk_radius
-        disk_radius[10] = self.units.convert_units(disk_radius -20, "m"),
+        disk_radius[10] = self.units.convert_units(disk_radius[10] -20, "m"),
         return disk_radius
 
 
