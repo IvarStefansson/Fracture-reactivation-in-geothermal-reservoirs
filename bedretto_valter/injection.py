@@ -3,6 +3,143 @@
 import porepy as pp
 import numpy as np
 from icecream import ic
+import matplotlib.pyplot as plt
+
+
+def plot_schedule(schedule, n, reactivation_pressure, fn):
+    times = [t / 3600 for t, _ in schedule]
+    pressures = [p * 1e-6 for _, p in schedule]
+    plt.plot(times, pressures, color="#188b18ff", label="Injection overpressure")
+    plt.axhline(
+        y=reactivation_pressure * 1e-6,
+        color="k",
+        linestyle="--",
+        label="Expected reactivation pressure",
+    )
+    plt.xlabel("Time [h]")
+    plt.ylabel("Pressure [MPa]")
+    plt.legend()
+    plt.title(f"Injection schedule (Interval {n})")
+    plt.grid()
+    plt.savefig(fn, dpi=800)
+    plt.show()
+
+
+class InjectionSchedule:
+    @property
+    def _initialization_schedule(self):
+        return [(0 * pp.HOUR, 0), (0.2 * pp.HOUR, 0)]
+
+    @property
+    def schedule(self):
+        # Fetch the initialization and pressure schedules
+        _initialization_schedule = self._initialization_schedule
+        _pressure_schedule = self._pressure_schedule
+
+        # Merge the initialization schedule with the pressure schedule
+        offset = _initialization_schedule[-1][0]
+        pressure_schedule = _initialization_schedule + [
+            (t + offset, v) for t, v in _pressure_schedule
+        ]
+
+        # Remove duplicate times
+        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
+        return pressure_schedule
+
+
+class InjectionSchedule8(InjectionSchedule):
+    @property
+    def _pressure_schedule(self):
+        schedule = [
+            (0 * pp.HOUR, 0),
+            (0.02 * pp.HOUR, 2 * pp.MEGA),
+            (0.2 * pp.HOUR, 2 * pp.MEGA),
+            (0.27 * pp.HOUR, 7.2 * pp.MEGA),
+            (0.32 * pp.HOUR, 6.8 * pp.MEGA),
+            (0.41 * pp.HOUR, 5.8 * pp.MEGA),
+            (0.75 * pp.HOUR, 5.5 * pp.MEGA),
+            (0.77 * pp.HOUR, 12 * pp.MEGA),
+            (0.82 * pp.HOUR, 12 * pp.MEGA),
+            (0.85 * pp.HOUR, 11 * pp.MEGA),
+            (0.90 * pp.HOUR, 10 * pp.MEGA),
+            (0.95 * pp.HOUR, 10 * pp.MEGA),
+            (1.00 * pp.HOUR, 10 * pp.MEGA),
+            (1.05 * pp.HOUR, 10 * pp.MEGA),
+            (1.10 * pp.HOUR, 10 * pp.MEGA),
+            (1.16 * pp.HOUR, 10 * pp.MEGA),
+            (1.23 * pp.HOUR, 8.6 * pp.MEGA),
+            (1.24 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.74 * pp.HOUR, -2.6 * pp.MEGA),
+            (1.77 * pp.HOUR, -1.4 * pp.MEGA),
+            (1.87 * pp.HOUR, 0 * pp.MEGA),
+            (2.18 * pp.HOUR, 0.5 * pp.MEGA),
+            (2.19 * pp.HOUR, 2.2 * pp.MEGA),
+            (2.29 * pp.HOUR, 2.1 * pp.MEGA),
+            (2.30 * pp.HOUR, 3.8 * pp.MEGA),
+            (2.40 * pp.HOUR, 4 * pp.MEGA),
+            (2.43 * pp.HOUR, 5 * pp.MEGA),
+            (2.51 * pp.HOUR, 4.6 * pp.MEGA),
+            (2.55 * pp.HOUR, 6 * pp.MEGA),
+            (2.68 * pp.HOUR, 5.4 * pp.MEGA),
+            (2.73 * pp.HOUR, 6.5 * pp.MEGA),
+            (2.85 * pp.HOUR, 6.7 * pp.MEGA),
+            (2.87 * pp.HOUR, 8 * pp.MEGA),
+            (3.02 * pp.HOUR, 8 * pp.MEGA),
+            (3.03 * pp.HOUR, 8.6 * pp.MEGA),
+            (3.08 * pp.HOUR, 8.2 * pp.MEGA),
+            (3.23 * pp.HOUR, 8.1 * pp.MEGA),
+            (3.25 * pp.HOUR, 9.9 * pp.MEGA),
+            (3.29 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.48 * pp.HOUR, 8.8 * pp.MEGA),
+            (3.49 * pp.HOUR, 9.8 * pp.MEGA),
+            (3.50 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.55 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.60 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.65 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.70 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.75 * pp.HOUR, 10.8 * pp.MEGA),
+            (3.80 * pp.HOUR, 10.8 * pp.MEGA),
+            (4.07 * pp.HOUR, 10.5 * pp.MEGA),
+            (4.30 * pp.HOUR, 7.1 * pp.MEGA),
+            (4.57 * pp.HOUR, 5 * pp.MEGA),
+        ]
+        # plot_schedule(schedule, 8, 9 * pp.MEGA, "injection_schedule_8.png")
+        return schedule
+
+
+class InjectionSchedule9(InjectionSchedule):
+    @property
+    def _pressure_schedule(self):
+        schedule = [
+            (0.00 * pp.HOUR, 0),
+            (0.08 * pp.HOUR, 0 * pp.MEGA),
+            (0.09 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.26 * pp.HOUR, 2.8 * pp.MEGA),
+            (0.27 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.46 * pp.HOUR, 4.7 * pp.MEGA),
+            (0.47 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.69 * pp.HOUR, 6.4 * pp.MEGA),
+            (0.70 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.88 * pp.HOUR, 7.5 * pp.MEGA),
+            (0.90 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.10 * pp.HOUR, 8.4 * pp.MEGA),
+            (1.11 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.32 * pp.HOUR, 10.3 * pp.MEGA),
+            (1.33 * pp.HOUR, 11 * pp.MEGA),
+            (1.56 * pp.HOUR, 11 * pp.MEGA),
+            (1.57 * pp.HOUR, 12 * pp.MEGA),
+            (1.95 * pp.HOUR, 12 * pp.MEGA),
+            (1.99 * pp.HOUR, 9 * pp.MEGA),
+            (2.06 * pp.HOUR, 7 * pp.MEGA),
+            (2.15 * pp.HOUR, 5.8 * pp.MEGA),
+            (2.17 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.88 * pp.HOUR, -2.4 * pp.MEGA),
+            (3.94 * pp.HOUR, -0.7 * pp.MEGA),
+            (4.18 * pp.HOUR, 0.02 * pp.MEGA),
+            (4.36 * pp.HOUR, 0 * pp.MEGA),
+        ]
+        # plot_schedule(schedule, "injection_schedule_9.png")
+        return schedule
 
 
 class PressureConstraintWell:
@@ -20,7 +157,7 @@ class PressureConstraintWell:
             [p for _, p in pressure_schedule],
             left=0.0,
         )
-        # ic(self.time_manager.time, current_injection_overpressure)
+        ic(self.time_manager.time, current_injection_overpressure)
 
         for sd in self.mdg.subdomains(return_data=False):
             pp.set_solution_values(
@@ -143,7 +280,7 @@ class FlowConstraintWell:
         return fluid_source
 
 
-class InjectionInterval8(PressureConstraintWell):
+class InjectionInterval8(InjectionSchedule8, PressureConstraintWell):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -159,89 +296,8 @@ class InjectionInterval8(PressureConstraintWell):
         """Defined in geometry.py"""
         return self.fracture_center[8][0]
 
-    @property
-    def is_pressure_controlled_injection(self):
-        """Check if the injection is pressure controlled."""
-        return False
 
-    @property
-    def is_rate_controlled_injection(self):
-        """Check if the injection is rate controlled."""
-        return True
-
-    @property
-    def rate_schedule(self):
-        """Return the empty rate schedule."""
-        return None
-
-    @property
-    def _initialization_schedule(self):
-        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
-
-    @property
-    def _pressure_schedule(self):
-        return [
-            (0 * pp.HOUR, 0),
-            (0.02 * pp.HOUR, 2 * pp.MEGA),
-            (0.2 * pp.HOUR, 2 * pp.MEGA),
-            (0.27 * pp.HOUR, 7.2 * pp.MEGA),
-            (0.32 * pp.HOUR, 6.8 * pp.MEGA),
-            (0.41 * pp.HOUR, 5.8 * pp.MEGA),
-            (0.75 * pp.HOUR, 5.5 * pp.MEGA),
-            (0.77 * pp.HOUR, 12 * pp.MEGA),
-            (0.85 * pp.HOUR, 11 * pp.MEGA),
-            (0.90 * pp.HOUR, 10 * pp.MEGA),
-            (1.16 * pp.HOUR, 10 * pp.MEGA),
-            (1.23 * pp.HOUR, 8.6 * pp.MEGA),
-            (1.24 * pp.HOUR, -2.6 * pp.MEGA),
-            (1.74 * pp.HOUR, -2.6 * pp.MEGA),
-            (1.77 * pp.HOUR, -1.4 * pp.MEGA),
-            (1.87 * pp.HOUR, 0 * pp.MEGA),
-            (2.18 * pp.HOUR, 0.5 * pp.MEGA),
-            (2.19 * pp.HOUR, 2.2 * pp.MEGA),
-            (2.29 * pp.HOUR, 2.1 * pp.MEGA),
-            (2.30 * pp.HOUR, 3.8 * pp.MEGA),
-            (2.40 * pp.HOUR, 4 * pp.MEGA),
-            (2.43 * pp.HOUR, 5 * pp.MEGA),
-            (2.51 * pp.HOUR, 4.6 * pp.MEGA),
-            (2.55 * pp.HOUR, 6 * pp.MEGA),
-            (2.68 * pp.HOUR, 5.4 * pp.MEGA),
-            (2.73 * pp.HOUR, 6.5 * pp.MEGA),
-            (2.85 * pp.HOUR, 6.7 * pp.MEGA),
-            (2.87 * pp.HOUR, 8 * pp.MEGA),
-            (3.02 * pp.HOUR, 8 * pp.MEGA),
-            (3.03 * pp.HOUR, 8.6 * pp.MEGA),
-            (3.08 * pp.HOUR, 8.2 * pp.MEGA),
-            (3.23 * pp.HOUR, 8.1 * pp.MEGA),
-            (3.25 * pp.HOUR, 9.9 * pp.MEGA),
-            (3.29 * pp.HOUR, 8.8 * pp.MEGA),
-            (3.48 * pp.HOUR, 8.8 * pp.MEGA),
-            (3.50 * pp.HOUR, 10.2 * pp.MEGA),
-            (3.55 * pp.HOUR, 9.9 * pp.MEGA),
-            (3.79 * pp.HOUR, 10.8 * pp.MEGA),
-            (4.07 * pp.HOUR, 10.5 * pp.MEGA),
-            (4.30 * pp.HOUR, 7.1 * pp.MEGA),
-            (4.57 * pp.HOUR, 5 * pp.MEGA),
-        ]
-
-    @property
-    def schedule(self):
-        # Fetch the initialization and pressure schedules
-        _initialization_schedule = self._initialization_schedule
-        _pressure_schedule = self._pressure_schedule
-
-        # Merge the initialization schedule with the pressure schedule
-        offset = _initialization_schedule[-1][0]
-        pressure_schedule = _initialization_schedule + [
-            (t + offset, v) for t, v in _pressure_schedule
-        ]
-
-        # Remove duplicate times
-        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
-        return pressure_schedule
-
-
-class WellInjectionInterval8:
+class WellInjectionInterval8(InjectionSchedule8):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -261,73 +317,7 @@ class WellInjectionInterval8:
             parameters={"mesh_size": self.params["cell_size"]},
         )
 
-    @property
-    def _initialization_schedule(self):
-        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
-
-    @property
-    def _pressure_schedule(self):
-        return [
-            (0 * pp.HOUR, 0),
-            (0.02 * pp.HOUR, 2 * pp.MEGA),
-            (0.2 * pp.HOUR, 2 * pp.MEGA),
-            (0.27 * pp.HOUR, 7.2 * pp.MEGA),
-            (0.32 * pp.HOUR, 6.8 * pp.MEGA),
-            (0.41 * pp.HOUR, 5.8 * pp.MEGA),
-            (0.75 * pp.HOUR, 5.5 * pp.MEGA),
-            (0.77 * pp.HOUR, 12 * pp.MEGA),
-            (0.85 * pp.HOUR, 11 * pp.MEGA),
-            (0.90 * pp.HOUR, 10 * pp.MEGA),
-            (1.16 * pp.HOUR, 10 * pp.MEGA),
-            (1.23 * pp.HOUR, 8.6 * pp.MEGA),
-            (1.24 * pp.HOUR, -2.6 * pp.MEGA),
-            (1.74 * pp.HOUR, -2.6 * pp.MEGA),
-            (1.77 * pp.HOUR, -1.4 * pp.MEGA),
-            (1.87 * pp.HOUR, 0 * pp.MEGA),
-            (2.18 * pp.HOUR, 0.5 * pp.MEGA),
-            (2.19 * pp.HOUR, 2.2 * pp.MEGA),
-            (2.29 * pp.HOUR, 2.1 * pp.MEGA),
-            (2.30 * pp.HOUR, 3.8 * pp.MEGA),
-            (2.40 * pp.HOUR, 4 * pp.MEGA),
-            (2.43 * pp.HOUR, 5 * pp.MEGA),
-            (2.51 * pp.HOUR, 4.6 * pp.MEGA),
-            (2.55 * pp.HOUR, 6 * pp.MEGA),
-            (2.68 * pp.HOUR, 5.4 * pp.MEGA),
-            (2.73 * pp.HOUR, 6.5 * pp.MEGA),
-            (2.85 * pp.HOUR, 6.7 * pp.MEGA),
-            (2.87 * pp.HOUR, 8 * pp.MEGA),
-            (3.02 * pp.HOUR, 8 * pp.MEGA),
-            (3.03 * pp.HOUR, 8.6 * pp.MEGA),
-            (3.08 * pp.HOUR, 8.2 * pp.MEGA),
-            (3.23 * pp.HOUR, 8.1 * pp.MEGA),
-            (3.25 * pp.HOUR, 9.9 * pp.MEGA),
-            (3.29 * pp.HOUR, 8.8 * pp.MEGA),
-            (3.48 * pp.HOUR, 8.8 * pp.MEGA),
-            (3.50 * pp.HOUR, 10.2 * pp.MEGA),
-            (3.55 * pp.HOUR, 9.9 * pp.MEGA),
-            (3.79 * pp.HOUR, 10.8 * pp.MEGA),
-            (4.07 * pp.HOUR, 10.5 * pp.MEGA),
-            (4.30 * pp.HOUR, 7.1 * pp.MEGA),
-            (4.57 * pp.HOUR, 5 * pp.MEGA),
-        ]
-
     # General
-
-    @property
-    def schedule(self):
-        # Fetch the initialization and pressure schedules
-        _initialization_schedule = self._initialization_schedule
-        _pressure_schedule = self._pressure_schedule
-
-        # Merge the initialization schedule with the pressure schedule
-        offset = _initialization_schedule[-1][0]
-        pressure_schedule = _initialization_schedule + [
-            (t + offset, v) for t, v in _pressure_schedule
-        ]
-
-        # Remove duplicate times
-        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
-        return pressure_schedule
 
     def update_time_dependent_ad_arrays(self) -> None:
         """Set current injection pressure."""
@@ -426,7 +416,20 @@ class WellInjectionInterval8:
         return eq
 
 
-class WellInjectionInterval9(WellInjectionInterval8):
+class InjectionInterval9(InjectionSchedule9, PressureConstraintWell):
+    """Adapted from Vaezi et al - not true data?"""
+
+    @property
+    def injection_local_fracture_index(self):
+        return self.interval_to_local_fracture_index[9]
+
+    @property
+    def injection_coordinate(self):
+        """Defined in geometry.py"""
+        return self.fracture_center[9][0]
+
+
+class WellInjectionInterval9(InjectionSchedule9, WellInjectionInterval8):
     """Extracted from Broeker et al, 2024, Hydromechanical characterization of a
     fractured crystalline rock volume during multi-stage hydraulic stimulations
     at the BedrettoLab. Fig 4a.
@@ -445,114 +448,6 @@ class WellInjectionInterval9(WellInjectionInterval8):
             wells=wells,
             parameters={"mesh_size": self.params["cell_size"]},
         )
-
-    @property
-    def _pressure_schedule(self):
-        return [
-            (0.00 * pp.HOUR, 0),
-            (0.08 * pp.HOUR, 0 * pp.MEGA),
-            (0.09 * pp.HOUR, 2.8 * pp.MEGA),
-            (0.26 * pp.HOUR, 2.8 * pp.MEGA),
-            (0.27 * pp.HOUR, 4.7 * pp.MEGA),
-            (0.46 * pp.HOUR, 4.7 * pp.MEGA),
-            (0.47 * pp.HOUR, 6.4 * pp.MEGA),
-            (0.69 * pp.HOUR, 6.4 * pp.MEGA),
-            (0.70 * pp.HOUR, 7.5 * pp.MEGA),
-            (0.88 * pp.HOUR, 7.5 * pp.MEGA),
-            (0.90 * pp.HOUR, 8.4 * pp.MEGA),
-            (1.10 * pp.HOUR, 8.4 * pp.MEGA),
-            (1.11 * pp.HOUR, 10.3 * pp.MEGA),
-            (1.32 * pp.HOUR, 10.3 * pp.MEGA),
-            (1.33 * pp.HOUR, 11 * pp.MEGA),
-            (1.56 * pp.HOUR, 11 * pp.MEGA),
-            (1.57 * pp.HOUR, 12 * pp.MEGA),
-            (1.95 * pp.HOUR, 12 * pp.MEGA),
-            (1.99 * pp.HOUR, 9 * pp.MEGA),
-            (2.06 * pp.HOUR, 7 * pp.MEGA),
-            (2.15 * pp.HOUR, 5.8 * pp.MEGA),
-            (2.17 * pp.HOUR, -2.4 * pp.MEGA),
-            (3.88 * pp.HOUR, -2.4 * pp.MEGA),
-            (3.94 * pp.HOUR, -0.7 * pp.MEGA),
-            (4.18 * pp.HOUR, 0.02 * pp.MEGA),
-            (4.36 * pp.HOUR, 0 * pp.MEGA),
-        ]
-
-
-class InjectionInterval9(PressureConstraintWell):
-    """Adapted from Vaezi et al - not true data?"""
-
-    @property
-    def injection_local_fracture_index(self):
-        print(self.interval_to_local_fracture_index[9])
-        return self.interval_to_local_fracture_index[9]
-
-    @property
-    def injection_coordinate(self):
-        """Defined in geometry.py"""
-        print(self.fracture_center[9][0])
-        return self.fracture_center[9][0]
-
-    @property
-    def is_pressure_controlled_injection(self):
-        """Check if the injection is pressure controlled."""
-        return False
-
-    @property
-    def is_rate_controlled_injection(self):
-        """Check if the injection is rate controlled."""
-        return True
-
-    @property
-    def _initialization_schedule(self):
-        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
-
-    @property
-    def _pressure_schedule(self):
-        return [
-            (0.00 * pp.HOUR, 0),
-            (0.08 * pp.HOUR, 0 * pp.MEGA),
-            (0.09 * pp.HOUR, 2.8 * pp.MEGA),
-            (0.26 * pp.HOUR, 2.8 * pp.MEGA),
-            (0.27 * pp.HOUR, 4.7 * pp.MEGA),
-            (0.46 * pp.HOUR, 4.7 * pp.MEGA),
-            (0.47 * pp.HOUR, 6.4 * pp.MEGA),
-            (0.69 * pp.HOUR, 6.4 * pp.MEGA),
-            (0.70 * pp.HOUR, 7.5 * pp.MEGA),
-            (0.88 * pp.HOUR, 7.5 * pp.MEGA),
-            (0.90 * pp.HOUR, 8.4 * pp.MEGA),
-            (1.10 * pp.HOUR, 8.4 * pp.MEGA),
-            (1.11 * pp.HOUR, 10.3 * pp.MEGA),
-            (1.32 * pp.HOUR, 10.3 * pp.MEGA),
-            (1.33 * pp.HOUR, 11 * pp.MEGA),
-            (1.56 * pp.HOUR, 11 * pp.MEGA),
-            (1.57 * pp.HOUR, 12 * pp.MEGA),
-            (1.95 * pp.HOUR, 12 * pp.MEGA),
-            (1.99 * pp.HOUR, 9 * pp.MEGA),
-            (2.06 * pp.HOUR, 7 * pp.MEGA),
-            (2.15 * pp.HOUR, 5.8 * pp.MEGA),
-            (2.17 * pp.HOUR, -2.4 * pp.MEGA),
-            (3.88 * pp.HOUR, -2.4 * pp.MEGA),
-            (3.94 * pp.HOUR, -0.7 * pp.MEGA),
-            (4.18 * pp.HOUR, 0.02 * pp.MEGA),
-            (4.36 * pp.HOUR, 0 * pp.MEGA),
-        ]
-
-
-    @property
-    def schedule(self):
-        # Fetch the initialization and pressure schedules
-        _initialization_schedule = self._initialization_schedule
-        _pressure_schedule = self._pressure_schedule
-
-        # Merge the initialization schedule with the pressure schedule
-        offset = _initialization_schedule[-1][0]
-        pressure_schedule = _initialization_schedule + [
-            (t + offset, v) for t, v in _pressure_schedule
-        ]
-
-        # Remove duplicate times
-        pressure_schedule = sorted(set(pressure_schedule), key=lambda x: x[0])
-        return pressure_schedule
 
 
 class InjectionInterval13(FlowConstraintWell):
@@ -576,18 +471,8 @@ class InjectionInterval13(FlowConstraintWell):
         return self.fracture_center[13][0]
 
     @property
-    def is_pressure_controlled_injection(self):
-        """Check if the injection is pressure controlled."""
-        return False
-
-    @property
-    def is_rate_controlled_injection(self):
-        """Check if the injection is rate controlled."""
-        return True
-
-    @property
     def _initialization_schedule(self):
-        return [(0 * pp.HOUR, 0), (1 * pp.HOUR, 0)]
+        return [(0 * pp.HOUR, 0), (0.2 * pp.HOUR, 0)]
 
     @property
     def _rate_schedule(self):
