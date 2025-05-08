@@ -37,14 +37,14 @@ args = parser.parse_args()
 # ! ---- Fixed parameters ----
 
 fractures = [
-    "7 8 9 10 11",
-    "7 8 9 10 11 12 13",
+#    "7 8 9 10 11",
+#    "7 8 9 10 11 12 13",
     "7 8 9 10 11 12 13 14",
 ]
 
-injection = ["8", "9", "8w", "9w"]
+injection = ["8"] #, "8w",]
 
-refinements = [2] #,2, 3, 4]
+refinements = [3] #,2, 3, 4]
 
 dilation_angles = [0.05]
 
@@ -57,14 +57,14 @@ safety_measures = [""]
 
 linear_solvers = ["pypardiso"] #, "fthm"]
 
-disks = ["large", "intermediate"]
+disks = ["large", "intermediate", "small"]
 
 simple = [(False, False)]
 
 linearization = "picard"
 decoupling = False
 iterative_decoupling = False
-output = "visualization-paper-2"
+output = "visualization-paper-2-refined"
 
 # ! ---- Options ----
 
