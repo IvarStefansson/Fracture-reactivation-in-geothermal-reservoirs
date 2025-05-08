@@ -42,9 +42,9 @@ fractures = [
     "7 8 9 10 11 12 13 14",
 ]
 
-injection = ["8"] #, "8w",]
+injection = ["8w"] #, "8w",]
 
-refinements = [3] #,2, 3, 4]
+refinements = [2, 3] #,2, 3, 4]
 
 dilation_angles = [0.05]
 
@@ -55,7 +55,7 @@ methods = [
 
 safety_measures = [""]
 
-linear_solvers = ["pypardiso"] #, "fthm"]
+linear_solvers = ["pypardiso", "fthm"]
 
 disks = ["large", "intermediate", "small"]
 
@@ -64,7 +64,7 @@ simple = [(False, False)]
 linearization = "picard"
 decoupling = False
 iterative_decoupling = False
-output = "visualization-paper-2-refined"
+output = "visualization-paper-2-refined-updated-geometry"
 
 # ! ---- Options ----
 
