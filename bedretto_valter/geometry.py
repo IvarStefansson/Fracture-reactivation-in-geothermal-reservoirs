@@ -86,13 +86,13 @@ class BedrettoValter_Geometry(CubeDomainOrthogonalFractures):
         disk_radius = 50
         return {
             14: self.units.convert_units(disk_radius, "m"),
-            13: self.units.convert_units(disk_radius-20, "m"),
-            12: self.units.convert_units(disk_radius-30, "m"),
-            11: self.units.convert_units(disk_radius-25, "m"),
+            13: self.units.convert_units(disk_radius - 20, "m"),
+            12: self.units.convert_units(disk_radius - 30, "m"),
+            11: self.units.convert_units(disk_radius - 25, "m"),
             10: self.units.convert_units(disk_radius + 10, "m"),
             9: self.units.convert_units(disk_radius, "m"),
-            8: self.units.convert_units(disk_radius, "m"),
-            7: self.units.convert_units(disk_radius - 10, "m"),
+            8: self.units.convert_units(disk_radius - 10, "m"),
+            7: self.units.convert_units(disk_radius - 20, "m"),
         }
 
     def set_fractures(self) -> None:
@@ -280,21 +280,28 @@ class IntermediateDisks:
     @property
     def disk_radius(self) -> dict:
         disk_radius = super().disk_radius
-        disk_radius[10] = self.units.convert_units(disk_radius[10] -20, "m"),
+        disk_radius[10] = (self.units.convert_units(disk_radius[10] - 20, "m"),)
         return disk_radius
 
 
 class SmallDisks:
     @property
     def disk_radius(self) -> dict:
-        disk_radius = 20
-        return {
-            14: self.units.convert_units(disk_radius, "m"),
-            13: self.units.convert_units(disk_radius, "m"),
-            12: self.units.convert_units(disk_radius, "m"),
-            11: self.units.convert_units(disk_radius, "m"),
-            10: self.units.convert_units(disk_radius, "m"),
-            9: self.units.convert_units(disk_radius, "m"),
-            8: self.units.convert_units(disk_radius, "m"),
-            7: self.units.convert_units(disk_radius, "m"),
-        }
+        disk_radius = super().disk_radius
+        disk_radius[10] = (self.units.convert_units(disk_radius[10] - 20, "m"),)
+        disk_radius[7] = (self.units.convert_units(15, "m"),)
+        return disk_radius
+
+    # @property
+    # def disk_radius(self) -> dict:
+    #    disk_radius = 20
+    #    return {
+    #        14: self.units.convert_units(disk_radius, "m"),
+    #        13: self.units.convert_units(disk_radius, "m"),
+    #        12: self.units.convert_units(disk_radius, "m"),
+    #        11: self.units.convert_units(disk_radius, "m"),
+    #        10: self.units.convert_units(disk_radius, "m"),
+    #        9: self.units.convert_units(disk_radius, "m"),
+    #        8: self.units.convert_units(disk_radius, "m"),
+    #        7: self.units.convert_units(disk_radius-5, "m"),
+    #    }
