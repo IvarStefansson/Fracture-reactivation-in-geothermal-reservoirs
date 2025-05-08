@@ -95,7 +95,8 @@ class BedrettoValter_Physics(
     #egc.EquilibriumStateInitialization, # FTHM IS NOT MADE FOR THIS (TRU FOR NCP)
     pp.constitutive_laws.GravityForce,
     egc.ScalarPermeability,
-    egc.NormalPermeabilityFromHigherDimension,
+    egc.NormalPermeabilityFromLowerDimension,
+    #egc.NormalPermeabilityFromHigherDimension,
     pp.constitutive_laws.CubicLawPermeability,  # Basic constitutive law
     egc.TPFAFlow,
     egc.SimpleFlow,

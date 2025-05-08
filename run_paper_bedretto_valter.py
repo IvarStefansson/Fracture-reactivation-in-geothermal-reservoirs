@@ -64,7 +64,7 @@ simple = [(False, False)]
 linearization = "picard"
 decoupling = False
 iterative_decoupling = False
-output = "visualization-paper-2-refined-updated-geometry"
+output = "visualization-paper-2-refined-updated-geometry-lower-dim-perm"
 
 # ! ---- Options ----
 
