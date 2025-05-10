@@ -37,27 +37,25 @@ args = parser.parse_args()
 # ! ---- Fixed parameters ----
 
 fractures = [
-#    "7 8 9 10 11",
-#    "7 8 9 10 11 12 13",
     "7 8 9 10 11 12 13 14",
 ]
 
-injection = ["8w"] #, "8w",]
+injection = ["8w"]
 
-refinements = [2, 3] #,2, 3, 4]
+refinements = [3] #[2, 3]
 
 dilation_angles = [0.05]
 
 methods = [
-    ("rr-nonlinear", "linesearch"),
-    #("ncp-min", "linesearch"),
+    #("rr-nonlinear", "linesearch"),
+    ("ncp-min", "linesearch"),
 ]
 
 safety_measures = [""]
 
-linear_solvers = ["pypardiso", "fthm"]
+linear_solvers = ["pypardiso"] # ["pypardiso", "fthm"]
 
-disks = ["large", "intermediate", "small"]
+disks = ["large"] #, "intermediate", "small"]
 
 simple = [(False, False)]
 
